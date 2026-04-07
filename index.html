@@ -292,7 +292,11 @@
       box-shadow: inset 0 0 0 1px rgba(103, 232, 249, 0.5);
     }
 
-    .game-panel { display: none; }
+    .game-panel {
+      display: none;
+      width: 100%;
+      overflow-x: auto;
+    }
     .game-panel.active { display: block; }
 
     .flappy-shell {
@@ -329,7 +333,8 @@
     #flappyCanvas {
       width: 100%;
       max-width: 536px;
-      height: 300px;
+      height: auto;
+      aspect-ratio: 536 / 300;
       border-radius: 12px;
       border: 1px solid var(--glass-border);
       background: linear-gradient(180deg, #2f6fdd, #88d6ff);
@@ -349,6 +354,7 @@
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 8px;
       margin-top: 10px;
+      width: 100%;
       max-width: 260px;
     }
     .guess-cell {
@@ -372,14 +378,16 @@
       background: rgba(255, 255, 255, 0.06);
       border-radius: 14px;
       padding: 10px;
-      width: fit-content;
+      width: min(100%, 430px);
       margin-top: 10px;
     }
 
     .tile-2048 {
-      height: 64px;
+      height: auto;
+      aspect-ratio: 1 / 1;
+      padding: 0;
       font-weight: 800;
-      font-size: 1rem;
+      font-size: clamp(0.9rem, 2vw, 1.05rem);
       border-radius: 12px;
       border: 1px solid rgba(255, 255, 255, 0.22);
       color: #0b1220;
@@ -392,9 +400,11 @@
     }
 
     .tic-cell {
-      height: 82px;
+      height: auto;
+      aspect-ratio: 1 / 1;
+      padding: 0;
       border-radius: 14px;
-      font-size: 1.6rem;
+      font-size: clamp(1.15rem, 4vw, 1.6rem);
       font-weight: 800;
       border: 1px solid rgba(255, 255, 255, 0.24);
       background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.26), rgba(255,255,255,0.06));
@@ -411,11 +421,13 @@
     }
 
     .whack-cell {
-      height: 72px;
+      height: auto;
+      aspect-ratio: 1 / 1;
+      padding: 0;
       border-radius: 50%;
       border: 1px solid rgba(255, 255, 255, 0.2);
       background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.16), rgba(30,41,59,0.8));
-      font-size: 1.25rem;
+      font-size: clamp(1rem, 3.5vw, 1.2rem);
     }
 
     .whack-cell.active {
@@ -425,7 +437,9 @@
     }
 
     .connect4-cell {
-      height: 52px;
+      height: auto;
+      aspect-ratio: 1 / 1;
+      padding: 0;
       border-radius: 50%;
       border: 1px solid rgba(255, 255, 255, 0.22);
       background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.2), rgba(30,41,59,0.72));
@@ -439,6 +453,23 @@
     .connect4-cell.yellow {
       background: radial-gradient(circle at 35% 30%, rgba(254,243,199,0.95), rgba(245,158,11,0.9));
       box-shadow: inset 0 0 12px rgba(120, 53, 15, 0.35), 0 0 10px rgba(245, 158, 11, 0.35);
+    }
+
+    .grid-2048 {
+      max-width: min(100%, 320px) !important;
+    }
+
+    .grid-tic {
+      max-width: min(100%, 290px) !important;
+    }
+
+    .grid-whack {
+      max-width: min(100%, 320px) !important;
+    }
+
+    .grid-connect4 {
+      gap: 6px;
+      max-width: min(100%, 420px) !important;
     }
 
     .reveal { opacity: 0; transform: translateY(12px); transition: 0.4s ease; }
@@ -565,11 +596,13 @@
 
         <article class="mini-tool">
           <h3>URL Shortener (Local)</h3>
-          <p class="muted">Creates compact labels for long links (local-only).</p>
+          <p class="muted">Creates real short links using this page URL and resolves them automatically.</p>
           <div class="row">
             <input id="longUrl" type="text" placeholder="Paste long URL">
             <button id="makeShort" class="btn" type="button">Shorten</button>
+            <button id="copyShort" class="btn" type="button">Copy</button>
           </div>
+          <p id="shortCodeHint" class="muted">Example: <code>?s=abc123</code></p>
           <p id="shortResult" class="muted">No link generated yet.</p>
         </article>
 
@@ -620,7 +653,7 @@
 
       <div id="snake" class="game-panel">
         <p class="muted">Use <b>WASD</b> (arrows also work). Eat food, avoid walls and your body.</p>
-        <canvas id="snakeCanvas" width="360" height="360" style="width:100%;max-width:360px;border:1px solid var(--glass-border);border-radius:12px;background:rgba(8,12,22,0.5);display:block;"></canvas>
+        <canvas id="snakeCanvas" width="360" height="360" style="width:100%;max-width:360px;aspect-ratio:1 / 1;height:auto;border:1px solid var(--glass-border);border-radius:12px;background:rgba(8,12,22,0.5);display:block;"></canvas>
         <div class="row">
           <button id="snakeStart" class="btn primary" type="button">Start</button>
           <button id="snakeReset" class="btn" type="button">Reset</button>
@@ -632,7 +665,7 @@
       <div id="puzzle2048" class="game-panel">
         <p class="muted">Use <b>WASD</b> (arrows also work) to merge numbers. Reach 2048.</p>
         <div class="board-shell">
-          <div id="board2048" class="guess-grid" style="max-width:320px;grid-template-columns:repeat(4,minmax(0,1fr));"></div>
+          <div id="board2048" class="guess-grid grid-2048" style="max-width:320px;grid-template-columns:repeat(4,minmax(0,1fr));"></div>
         </div>
         <div class="row">
           <button id="reset2048" class="btn" type="button">New Game</button>
@@ -645,7 +678,7 @@
       <div id="tic" class="game-panel">
         <p class="muted">You are X. AI is O with selectable difficulty.</p>
         <div class="board-shell">
-          <div id="ticGrid" class="guess-grid" style="max-width:270px;grid-template-columns:repeat(3,minmax(0,1fr));"></div>
+          <div id="ticGrid" class="guess-grid grid-tic" style="max-width:270px;grid-template-columns:repeat(3,minmax(0,1fr));"></div>
         </div>
         <div class="row">
           <select id="ticDifficulty" class="btn" style="padding-right:26px;">
@@ -661,7 +694,7 @@
       <div id="whack" class="game-panel">
         <p class="muted">Hit moles quickly. 20 second round.</p>
         <div class="board-shell">
-          <div id="whackGrid" class="guess-grid" style="max-width:320px;grid-template-columns:repeat(3,minmax(0,1fr));"></div>
+          <div id="whackGrid" class="guess-grid grid-whack" style="max-width:320px;grid-template-columns:repeat(3,minmax(0,1fr));"></div>
         </div>
         <div class="row">
           <button id="whackStart" class="btn primary" type="button">Start Round</button>
@@ -672,7 +705,7 @@
       <div id="connect4" class="game-panel">
         <p class="muted">Drop checkers in a column. You are Red, AI is Yellow.</p>
         <div class="board-shell">
-          <div id="connect4Grid" class="guess-grid" style="max-width:380px;grid-template-columns:repeat(7,minmax(0,1fr));"></div>
+          <div id="connect4Grid" class="guess-grid grid-connect4" style="max-width:380px;grid-template-columns:repeat(7,minmax(0,1fr));"></div>
         </div>
         <div class="row">
           <button id="connect4Reset" class="btn" type="button">Reset</button>
@@ -682,7 +715,7 @@
 
       <div id="pong" class="game-panel">
         <p class="muted">Use <b>W/S</b> to move. AI paddle adapts to ball speed.</p>
-        <canvas id="pongCanvas" width="560" height="300" style="width:100%;max-width:560px;border:1px solid var(--glass-border);border-radius:12px;background:rgba(8,12,22,0.5);display:block;"></canvas>
+        <canvas id="pongCanvas" width="560" height="300" style="width:100%;max-width:560px;aspect-ratio:560 / 300;height:auto;border:1px solid var(--glass-border);border-radius:12px;background:rgba(8,12,22,0.5);display:block;"></canvas>
         <div class="row">
           <button id="pongStart" class="btn primary" type="button">Start</button>
           <button id="pongReset" class="btn" type="button">Reset</button>
@@ -785,16 +818,121 @@
     notesBox.value = localStorage.getItem("soham_notes") || "";
     notesBox.addEventListener("input", () => localStorage.setItem("soham_notes", notesBox.value));
 
-    document.getElementById("makeShort").addEventListener("click", () => {
-      const longUrl = document.getElementById("longUrl").value.trim();
-      const out = document.getElementById("shortResult");
-      if (!longUrl) {
-        out.textContent = "Enter a URL first.";
+    const shortenInput = document.getElementById("longUrl");
+    const shortenCreateButton = document.getElementById("makeShort");
+    const shortenCopyButton = document.getElementById("copyShort");
+    const shortenOutput = document.getElementById("shortResult");
+    const shortenHint = document.getElementById("shortCodeHint");
+    let latestShortUrl = "";
+
+    function getShortenerMap() {
+      try {
+        const rawMap = localStorage.getItem("soham_short_links");
+        return rawMap ? JSON.parse(rawMap) : {};
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function saveShortenerMap(shortenerMap) {
+      localStorage.setItem("soham_short_links", JSON.stringify(shortenerMap));
+    }
+
+    function normalizeUrl(userInputUrl) {
+      if (!userInputUrl) return "";
+      const trimmedValue = userInputUrl.trim();
+      if (!trimmedValue) return "";
+      const withProtocol = /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(trimmedValue) ? trimmedValue : "https://" + trimmedValue;
+      try {
+        return new URL(withProtocol).toString();
+      } catch (error) {
+        return "";
+      }
+    }
+
+    function generateShortCode(existingMap) {
+      const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      let generatedCode = "";
+      do {
+        generatedCode = "";
+        for (let index = 0; index < 6; index += 1) {
+          generatedCode += alphabet[Math.floor(Math.random() * alphabet.length)];
+        }
+      } while (existingMap[generatedCode]);
+      return generatedCode;
+    }
+
+    function buildShortUrlFromCode(shortCode) {
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set("s", shortCode);
+      currentUrl.hash = "";
+      return currentUrl.toString();
+    }
+
+    function resolveShortLinkFromQuery() {
+      const currentUrl = new URL(window.location.href);
+      const requestedCode = currentUrl.searchParams.get("s");
+      if (!requestedCode) return;
+      const shortenerMap = getShortenerMap();
+      const targetEntry = shortenerMap[requestedCode];
+      if (!targetEntry || !targetEntry.url) {
+        shortenOutput.textContent = "Short code not found on this browser: " + requestedCode;
         return;
       }
-      const key = Math.random().toString(36).slice(2, 8);
-      out.textContent = "short://" + key + " -> " + longUrl;
+      shortenOutput.textContent = "Redirecting to " + targetEntry.url;
+      setTimeout(() => {
+        window.location.href = targetEntry.url;
+      }, 250);
+    }
+
+    shortenCreateButton.addEventListener("click", () => {
+      const normalizedTargetUrl = normalizeUrl(shortenInput.value);
+      if (!normalizedTargetUrl) {
+        shortenOutput.textContent = "Enter a valid URL. Example: github.com";
+        latestShortUrl = "";
+        return;
+      }
+
+      const shortenerMap = getShortenerMap();
+      let existingCode = "";
+      Object.keys(shortenerMap).forEach((shortCode) => {
+        if (shortenerMap[shortCode] && shortenerMap[shortCode].url === normalizedTargetUrl) {
+          existingCode = shortCode;
+        }
+      });
+      const shortCode = existingCode || generateShortCode(shortenerMap);
+      shortenerMap[shortCode] = {
+        url: normalizedTargetUrl,
+        createdAt: new Date().toISOString()
+      };
+      saveShortenerMap(shortenerMap);
+
+      latestShortUrl = buildShortUrlFromCode(shortCode);
+      shortenHint.textContent = "Code: " + shortCode;
+      shortenOutput.innerHTML = "";
+      const previewAnchor = document.createElement("a");
+      previewAnchor.href = latestShortUrl;
+      previewAnchor.textContent = latestShortUrl;
+      previewAnchor.style.color = "var(--primary)";
+      previewAnchor.target = "_blank";
+      previewAnchor.rel = "noreferrer";
+      shortenOutput.appendChild(previewAnchor);
     });
+
+    shortenCopyButton.addEventListener("click", async () => {
+      if (!latestShortUrl) {
+        shortenOutput.textContent = "Create a short URL first.";
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(latestShortUrl);
+        shortenOutput.textContent = "Copied: " + latestShortUrl;
+      } catch (error) {
+        shortenOutput.textContent = "Copy failed. URL: " + latestShortUrl;
+      }
+    });
+
+    resolveShortLinkFromQuery();
 
     const habits = [...document.querySelectorAll(".habit")];
     const habitStatus = document.getElementById("habitStatus");

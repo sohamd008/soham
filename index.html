@@ -359,6 +359,86 @@
       background: rgba(255, 255, 255, 0.08);
       cursor: pointer;
       user-select: none;
+      transition: transform 0.14s ease, box-shadow 0.14s ease, background 0.14s ease;
+    }
+
+    .guess-cell:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
+    }
+
+    .board-shell {
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 14px;
+      padding: 10px;
+      width: fit-content;
+      margin-top: 10px;
+    }
+
+    .tile-2048 {
+      height: 64px;
+      font-weight: 800;
+      font-size: 1rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #0b1220;
+      text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+
+    .tile-empty {
+      background: rgba(255, 255, 255, 0.07);
+      color: transparent;
+    }
+
+    .tic-cell {
+      height: 82px;
+      border-radius: 14px;
+      font-size: 1.6rem;
+      font-weight: 800;
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      background: radial-gradient(circle at 30% 20%, rgba(255,255,255,0.26), rgba(255,255,255,0.06));
+    }
+
+    .tic-cell.x {
+      color: #67e8f9;
+      text-shadow: 0 0 12px rgba(103, 232, 249, 0.4);
+    }
+
+    .tic-cell.o {
+      color: #fbbf24;
+      text-shadow: 0 0 12px rgba(251, 191, 36, 0.35);
+    }
+
+    .whack-cell {
+      height: 72px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.16), rgba(30,41,59,0.8));
+      font-size: 1.25rem;
+    }
+
+    .whack-cell.active {
+      background: radial-gradient(circle at 45% 35%, rgba(251,113,133,0.85), rgba(190,24,93,0.8));
+      box-shadow: 0 0 18px rgba(251, 113, 133, 0.45);
+      transform: translateY(-2px);
+    }
+
+    .connect4-cell {
+      height: 52px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.2), rgba(30,41,59,0.72));
+    }
+
+    .connect4-cell.red {
+      background: radial-gradient(circle at 35% 30%, rgba(254,202,202,0.95), rgba(239,68,68,0.85));
+      box-shadow: inset 0 0 12px rgba(127, 29, 29, 0.45), 0 0 10px rgba(239, 68, 68, 0.35);
+    }
+
+    .connect4-cell.yellow {
+      background: radial-gradient(circle at 35% 30%, rgba(254,243,199,0.95), rgba(245,158,11,0.9));
+      box-shadow: inset 0 0 12px rgba(120, 53, 15, 0.35), 0 0 10px rgba(245, 158, 11, 0.35);
     }
 
     .reveal { opacity: 0; transform: translateY(12px); transition: 0.4s ease; }
@@ -508,7 +588,7 @@
 
     <section id="games" class="glass reveal">
       <h2>Games Lounge</h2>
-      <p class="muted">Five games included. Use these for short breaks.</p>
+      <p class="muted">Seven games included. Use these for short breaks.</p>
 
       <div class="game-tabs">
         <button class="tab active" data-game="flappy" type="button">Flappy Bird</button>
@@ -516,6 +596,8 @@
         <button class="tab" data-game="puzzle2048" type="button">2048 Lite</button>
         <button class="tab" data-game="tic" type="button">Tic Tac Toe</button>
         <button class="tab" data-game="whack" type="button">Whack-a-Mole</button>
+        <button class="tab" data-game="connect4" type="button">Connect Four AI</button>
+        <button class="tab" data-game="pong" type="button">Pong vs AI</button>
       </div>
 
       <div id="flappy" class="game-panel active">
@@ -542,23 +624,35 @@
         <div class="row">
           <button id="snakeStart" class="btn primary" type="button">Start</button>
           <button id="snakeReset" class="btn" type="button">Reset</button>
+          <button id="snakeAuto" class="btn" type="button">AI Auto: Off</button>
         </div>
         <p id="snakeMsg" class="muted">Score: 0 | Best: 0</p>
       </div>
 
       <div id="puzzle2048" class="game-panel">
         <p class="muted">Use <b>WASD</b> (arrows also work) to merge numbers. Reach 2048.</p>
-        <div id="board2048" class="guess-grid" style="max-width:320px;grid-template-columns:repeat(4,minmax(0,1fr));"></div>
+        <div class="board-shell">
+          <div id="board2048" class="guess-grid" style="max-width:320px;grid-template-columns:repeat(4,minmax(0,1fr));"></div>
+        </div>
         <div class="row">
           <button id="reset2048" class="btn" type="button">New Game</button>
+          <button id="hint2048" class="btn" type="button">AI Move</button>
+          <button id="auto2048" class="btn" type="button">Auto: Off</button>
         </div>
         <p id="msg2048" class="muted">Score: 0</p>
       </div>
 
       <div id="tic" class="game-panel">
-        <p class="muted">You are X. AI is O and plays optimal moves.</p>
-        <div id="ticGrid" class="guess-grid" style="max-width:270px;grid-template-columns:repeat(3,minmax(0,1fr));"></div>
+        <p class="muted">You are X. AI is O with selectable difficulty.</p>
+        <div class="board-shell">
+          <div id="ticGrid" class="guess-grid" style="max-width:270px;grid-template-columns:repeat(3,minmax(0,1fr));"></div>
+        </div>
         <div class="row">
+          <select id="ticDifficulty" class="btn" style="padding-right:26px;">
+            <option value="easy">AI: Easy</option>
+            <option value="medium" selected>AI: Medium</option>
+            <option value="hard">AI: Hard</option>
+          </select>
           <button id="ticReset" class="btn" type="button">Reset</button>
         </div>
         <p id="ticMsg" class="muted">Your turn.</p>
@@ -566,11 +660,34 @@
 
       <div id="whack" class="game-panel">
         <p class="muted">Hit moles quickly. 20 second round.</p>
-        <div id="whackGrid" class="guess-grid" style="max-width:320px;grid-template-columns:repeat(3,minmax(0,1fr));"></div>
+        <div class="board-shell">
+          <div id="whackGrid" class="guess-grid" style="max-width:320px;grid-template-columns:repeat(3,minmax(0,1fr));"></div>
+        </div>
         <div class="row">
           <button id="whackStart" class="btn primary" type="button">Start Round</button>
         </div>
         <p id="whackMsg" class="muted">Score: 0 | Time: 20</p>
+      </div>
+
+      <div id="connect4" class="game-panel">
+        <p class="muted">Drop checkers in a column. You are Red, AI is Yellow.</p>
+        <div class="board-shell">
+          <div id="connect4Grid" class="guess-grid" style="max-width:380px;grid-template-columns:repeat(7,minmax(0,1fr));"></div>
+        </div>
+        <div class="row">
+          <button id="connect4Reset" class="btn" type="button">Reset</button>
+        </div>
+        <p id="connect4Msg" class="muted">Your turn.</p>
+      </div>
+
+      <div id="pong" class="game-panel">
+        <p class="muted">Use <b>W/S</b> to move. AI paddle adapts to ball speed.</p>
+        <canvas id="pongCanvas" width="560" height="300" style="width:100%;max-width:560px;border:1px solid var(--glass-border);border-radius:12px;background:rgba(8,12,22,0.5);display:block;"></canvas>
+        <div class="row">
+          <button id="pongStart" class="btn primary" type="button">Start</button>
+          <button id="pongReset" class="btn" type="button">Reset</button>
+        </div>
+        <p id="pongMsg" class="muted">You: 0 | AI: 0</p>
       </div>
     </section>
 
@@ -704,6 +821,7 @@
     const snakeCanvas = document.getElementById("snakeCanvas");
     const snakeContext = snakeCanvas.getContext("2d");
     const snakeMessage = document.getElementById("snakeMsg");
+    const snakeAutoButton = document.getElementById("snakeAuto");
     const snakeCellSize = 18;
     const snakeGridSize = snakeCanvas.width / snakeCellSize;
     let snakeDirection = { x: 1, y: 0 };
@@ -714,6 +832,7 @@
     let snakeBestScore = Number(localStorage.getItem("snake_best") || 0);
     let snakeTimer = null;
     let snakeGameOver = false;
+    let snakeAutoEnabled = false;
 
     function spawnSnakeFood() {
       let foundSpot = false;
@@ -751,6 +870,37 @@
       snakeMessage.textContent = "Score: " + snakeScore + " | Best: " + snakeBestScore + (extraText ? " | " + extraText : "");
     }
 
+    function getSnakeSafeDirections() {
+      const candidateDirections = [
+        { x: 0, y: -1, name: "up" },
+        { x: 0, y: 1, name: "down" },
+        { x: -1, y: 0, name: "left" },
+        { x: 1, y: 0, name: "right" }
+      ];
+      const snakeHead = snakeBody[0];
+      return candidateDirections.filter((direction) => {
+        if (direction.x === -snakeDirection.x && direction.y === -snakeDirection.y) return false;
+        const nextX = snakeHead.x + direction.x;
+        const nextY = snakeHead.y + direction.y;
+        const collidesWithWall = nextX < 0 || nextY < 0 || nextX >= snakeGridSize || nextY >= snakeGridSize;
+        if (collidesWithWall) return false;
+        const collidesWithBody = snakeBody.some((segment) => segment.x === nextX && segment.y === nextY);
+        return !collidesWithBody;
+      });
+    }
+
+    function runSnakeAutoPilot() {
+      const snakeHead = snakeBody[0];
+      const safeDirections = getSnakeSafeDirections();
+      if (!safeDirections.length) return;
+      safeDirections.sort((firstDirection, secondDirection) => {
+        const firstDistance = Math.abs((snakeHead.x + firstDirection.x) - snakeFood.x) + Math.abs((snakeHead.y + firstDirection.y) - snakeFood.y);
+        const secondDistance = Math.abs((snakeHead.x + secondDirection.x) - snakeFood.x) + Math.abs((snakeHead.y + secondDirection.y) - snakeFood.y);
+        return firstDistance - secondDistance;
+      });
+      snakeNextDirection = { x: safeDirections[0].x, y: safeDirections[0].y };
+    }
+
     function resetSnakeGame() {
       snakeDirection = { x: 1, y: 0 };
       snakeNextDirection = { x: 1, y: 0 };
@@ -764,6 +914,7 @@
 
     function stepSnakeGame() {
       if (snakeGameOver) return;
+      if (snakeAutoEnabled) runSnakeAutoPilot();
       snakeDirection = snakeNextDirection;
       const currentHead = snakeBody[0];
       const nextHead = { x: currentHead.x + snakeDirection.x, y: currentHead.y + snakeDirection.y };
@@ -806,20 +957,41 @@
       snakeTimer = null;
       resetSnakeGame();
     });
+    snakeAutoButton.addEventListener("click", () => {
+      snakeAutoEnabled = !snakeAutoEnabled;
+      snakeAutoButton.textContent = "AI Auto: " + (snakeAutoEnabled ? "On" : "Off");
+      updateSnakeMessage(snakeAutoEnabled ? "AI driving" : "Manual");
+    });
 
     const board2048 = document.getElementById("board2048");
     const message2048 = document.getElementById("msg2048");
+    const hint2048Button = document.getElementById("hint2048");
+    const auto2048Button = document.getElementById("auto2048");
     let puzzle2048Grid = [];
     let puzzle2048Score = 0;
+    let auto2048Enabled = false;
+    let auto2048Timer = null;
 
     function create2048Cell(rowIndex, columnIndex, value) {
+      const valueToColorMap = {
+        2: "linear-gradient(140deg,#dbeafe,#93c5fd)",
+        4: "linear-gradient(140deg,#bfdbfe,#60a5fa)",
+        8: "linear-gradient(140deg,#a5f3fc,#22d3ee)",
+        16: "linear-gradient(140deg,#99f6e4,#34d399)",
+        32: "linear-gradient(140deg,#fde68a,#fbbf24)",
+        64: "linear-gradient(140deg,#fdba74,#fb923c)",
+        128: "linear-gradient(140deg,#fda4af,#fb7185)",
+        256: "linear-gradient(140deg,#f9a8d4,#ec4899)",
+        512: "linear-gradient(140deg,#ddd6fe,#a78bfa)",
+        1024: "linear-gradient(140deg,#c4b5fd,#8b5cf6)",
+        2048: "linear-gradient(140deg,#fef3c7,#f59e0b)"
+      };
       const cellElement = document.createElement("button");
       cellElement.type = "button";
-      cellElement.className = "guess-cell";
-      cellElement.style.height = "64px";
-      cellElement.style.fontWeight = "700";
+      cellElement.className = "guess-cell tile-2048";
       cellElement.textContent = value === 0 ? "" : String(value);
-      cellElement.style.background = value === 0 ? "rgba(255,255,255,0.05)" : "rgba(103,232,249,0.18)";
+      cellElement.classList.toggle("tile-empty", value === 0);
+      cellElement.style.background = value === 0 ? "" : (valueToColorMap[value] || "linear-gradient(140deg,#e5e7eb,#9ca3af)");
       cellElement.dataset.row = String(rowIndex);
       cellElement.dataset.col = String(columnIndex);
       return cellElement;
@@ -899,8 +1071,118 @@
 
     document.getElementById("reset2048").addEventListener("click", reset2048);
 
+    function clone2048Grid(grid) {
+      return grid.map((row) => [...row]);
+    }
+
+    function evaluate2048Grid(grid) {
+      let emptyCellCount = 0;
+      let maxTileValue = 0;
+      let smoothnessPenalty = 0;
+      for (let rowIndex = 0; rowIndex < 4; rowIndex += 1) {
+        for (let columnIndex = 0; columnIndex < 4; columnIndex += 1) {
+          const value = grid[rowIndex][columnIndex];
+          if (value === 0) emptyCellCount += 1;
+          maxTileValue = Math.max(maxTileValue, value);
+          if (columnIndex < 3 && grid[rowIndex][columnIndex + 1] !== 0 && value !== 0) {
+            smoothnessPenalty += Math.abs(Math.log2(value) - Math.log2(grid[rowIndex][columnIndex + 1]));
+          }
+          if (rowIndex < 3 && grid[rowIndex + 1][columnIndex] !== 0 && value !== 0) {
+            smoothnessPenalty += Math.abs(Math.log2(value) - Math.log2(grid[rowIndex + 1][columnIndex]));
+          }
+        }
+      }
+      return emptyCellCount * 50 + Math.log2(maxTileValue || 1) * 20 - smoothnessPenalty * 4;
+    }
+
+    function simulate2048Move(simulationGrid, direction) {
+      const originalGridState = JSON.stringify(simulationGrid);
+
+      function compressRowForSimulation(values) {
+        const nonZeroValues = values.filter((value) => value !== 0);
+        const mergedValues = [];
+        for (let valueIndex = 0; valueIndex < nonZeroValues.length; valueIndex += 1) {
+          if (nonZeroValues[valueIndex] === nonZeroValues[valueIndex + 1]) {
+            mergedValues.push(nonZeroValues[valueIndex] * 2);
+            valueIndex += 1;
+          } else {
+            mergedValues.push(nonZeroValues[valueIndex]);
+          }
+        }
+        while (mergedValues.length < 4) mergedValues.push(0);
+        return mergedValues;
+      }
+
+      if (direction === "left") {
+        simulationGrid = simulationGrid.map((row) => compressRowForSimulation(row));
+      } else if (direction === "right") {
+        simulationGrid = simulationGrid.map((row) => compressRowForSimulation([...row].reverse()).reverse());
+      } else if (direction === "up") {
+        for (let columnIndex = 0; columnIndex < 4; columnIndex += 1) {
+          const columnValues = [simulationGrid[0][columnIndex], simulationGrid[1][columnIndex], simulationGrid[2][columnIndex], simulationGrid[3][columnIndex]];
+          const updatedColumn = compressRowForSimulation(columnValues);
+          for (let rowIndex = 0; rowIndex < 4; rowIndex += 1) simulationGrid[rowIndex][columnIndex] = updatedColumn[rowIndex];
+        }
+      } else if (direction === "down") {
+        for (let columnIndex = 0; columnIndex < 4; columnIndex += 1) {
+          const columnValues = [simulationGrid[3][columnIndex], simulationGrid[2][columnIndex], simulationGrid[1][columnIndex], simulationGrid[0][columnIndex]];
+          const updatedColumn = compressRowForSimulation(columnValues);
+          for (let rowIndex = 0; rowIndex < 4; rowIndex += 1) simulationGrid[3 - rowIndex][columnIndex] = updatedColumn[rowIndex];
+        }
+      }
+
+      const changed = JSON.stringify(simulationGrid) !== originalGridState;
+      return { changed, grid: simulationGrid };
+    }
+
+    function getBest2048Move() {
+      const directions = ["up", "left", "right", "down"];
+      let bestDirection = null;
+      let bestDirectionScore = -Infinity;
+      directions.forEach((direction) => {
+        const simulation = simulate2048Move(clone2048Grid(puzzle2048Grid), direction);
+        if (!simulation.changed) return;
+        const score = evaluate2048Grid(simulation.grid);
+        if (score > bestDirectionScore) {
+          bestDirectionScore = score;
+          bestDirection = direction;
+        }
+      });
+      return bestDirection;
+    }
+
+    hint2048Button.addEventListener("click", () => {
+      const bestMove = getBest2048Move();
+      if (bestMove) {
+        move2048(bestMove);
+      } else {
+        message2048.textContent = "Score: " + puzzle2048Score + " | No valid move";
+      }
+    });
+
+    auto2048Button.addEventListener("click", () => {
+      auto2048Enabled = !auto2048Enabled;
+      auto2048Button.textContent = "Auto: " + (auto2048Enabled ? "On" : "Off");
+      clearInterval(auto2048Timer);
+      auto2048Timer = null;
+      if (auto2048Enabled) {
+        auto2048Timer = setInterval(() => {
+          const bestMove = getBest2048Move();
+          if (bestMove) {
+            move2048(bestMove);
+          } else {
+            auto2048Enabled = false;
+            auto2048Button.textContent = "Auto: Off";
+            clearInterval(auto2048Timer);
+            auto2048Timer = null;
+          }
+        }, 180);
+      }
+    });
+
     const ticGrid = document.getElementById("ticGrid");
     const ticMessage = document.getElementById("ticMsg");
+    const ticDifficultySelect = document.getElementById("ticDifficulty");
     let ticBoard = Array(9).fill("");
     let ticGameDone = false;
 
@@ -916,10 +1198,10 @@
       return board.includes("") ? null : "draw";
     }
 
-    function minimaxTic(board, isMaximizing) {
+    function minimaxTic(board, isMaximizing, depth) {
       const result = evaluateTicWinner(board);
-      if (result === "O") return 10;
-      if (result === "X") return -10;
+      if (result === "O") return 10 - depth;
+      if (result === "X") return depth - 10;
       if (result === "draw") return 0;
 
       if (isMaximizing) {
@@ -927,7 +1209,7 @@
         for (let index = 0; index < board.length; index += 1) {
           if (!board[index]) {
             board[index] = "O";
-            bestScore = Math.max(bestScore, minimaxTic(board, false));
+            bestScore = Math.max(bestScore, minimaxTic(board, false, depth + 1));
             board[index] = "";
           }
         }
@@ -938,7 +1220,7 @@
       for (let index = 0; index < board.length; index += 1) {
         if (!board[index]) {
           board[index] = "X";
-          bestScore = Math.min(bestScore, minimaxTic(board, true));
+          bestScore = Math.min(bestScore, minimaxTic(board, true, depth + 1));
           board[index] = "";
         }
       }
@@ -946,20 +1228,25 @@
     }
 
     function getBestTicMove() {
-      let bestScore = -Infinity;
-      let bestMoveIndex = -1;
+      const difficultyLevel = ticDifficultySelect.value;
+      const candidateMoves = [];
       for (let index = 0; index < ticBoard.length; index += 1) {
         if (!ticBoard[index]) {
           ticBoard[index] = "O";
-          const score = minimaxTic(ticBoard, false);
+          const score = minimaxTic(ticBoard, false, 0);
           ticBoard[index] = "";
-          if (score > bestScore) {
-            bestScore = score;
-            bestMoveIndex = index;
-          }
+          candidateMoves.push({ index, score });
         }
       }
-      return bestMoveIndex;
+      if (!candidateMoves.length) return -1;
+      candidateMoves.sort((firstMove, secondMove) => secondMove.score - firstMove.score);
+      if (difficultyLevel === "easy" && Math.random() < 0.55) {
+        return candidateMoves[Math.floor(Math.random() * candidateMoves.length)].index;
+      }
+      if (difficultyLevel === "medium" && candidateMoves.length > 1 && Math.random() < 0.35) {
+        return candidateMoves[1].index;
+      }
+      return candidateMoves[0].index;
     }
 
     function renderTicBoard() {
@@ -967,10 +1254,9 @@
       ticBoard.forEach((value, index) => {
         const ticCellButton = document.createElement("button");
         ticCellButton.type = "button";
-        ticCellButton.className = "guess-cell";
-        ticCellButton.style.height = "82px";
-        ticCellButton.style.fontSize = "1.25rem";
-        ticCellButton.style.fontWeight = "700";
+        ticCellButton.className = "guess-cell tic-cell";
+        if (value === "X") ticCellButton.classList.add("x");
+        if (value === "O") ticCellButton.classList.add("o");
         ticCellButton.textContent = value;
         ticCellButton.addEventListener("click", () => {
           if (ticGameDone || ticBoard[index]) return;
@@ -1016,10 +1302,9 @@
       for (let holeIndex = 0; holeIndex < 9; holeIndex += 1) {
         const holeButton = document.createElement("button");
         holeButton.type = "button";
-        holeButton.className = "guess-cell";
-        holeButton.style.height = "72px";
-        holeButton.textContent = holeIndex === whackActiveIndex ? "Mole" : "";
-        holeButton.style.background = holeIndex === whackActiveIndex ? "rgba(251,113,133,0.26)" : "rgba(255,255,255,0.08)";
+        holeButton.className = "guess-cell whack-cell";
+        if (holeIndex === whackActiveIndex) holeButton.classList.add("active");
+        holeButton.textContent = holeIndex === whackActiveIndex ? "🐹" : "";
         holeButton.addEventListener("click", () => {
           if (holeIndex === whackActiveIndex) {
             whackScore += 1;
@@ -1058,6 +1343,301 @@
       }, 1000);
     }
     document.getElementById("whackStart").addEventListener("click", startWhackRound);
+
+    const connect4Grid = document.getElementById("connect4Grid");
+    const connect4Message = document.getElementById("connect4Msg");
+    let connect4Board = Array.from({ length: 6 }, () => Array(7).fill(""));
+    let connect4GameOver = false;
+
+    function getConnect4Winner(board) {
+      const directions = [
+        { r: 0, c: 1 },
+        { r: 1, c: 0 },
+        { r: 1, c: 1 },
+        { r: 1, c: -1 }
+      ];
+      for (let rowIndex = 0; rowIndex < 6; rowIndex += 1) {
+        for (let columnIndex = 0; columnIndex < 7; columnIndex += 1) {
+          const token = board[rowIndex][columnIndex];
+          if (!token) continue;
+          for (const direction of directions) {
+            let count = 1;
+            while (
+              count < 4 &&
+              rowIndex + direction.r * count >= 0 &&
+              rowIndex + direction.r * count < 6 &&
+              columnIndex + direction.c * count >= 0 &&
+              columnIndex + direction.c * count < 7 &&
+              board[rowIndex + direction.r * count][columnIndex + direction.c * count] === token
+            ) {
+              count += 1;
+            }
+            if (count === 4) return token;
+          }
+        }
+      }
+      const hasEmptyCell = board.some((row) => row.some((cell) => !cell));
+      return hasEmptyCell ? null : "draw";
+    }
+
+    function getConnect4DropRow(board, columnIndex) {
+      for (let rowIndex = 5; rowIndex >= 0; rowIndex -= 1) {
+        if (!board[rowIndex][columnIndex]) return rowIndex;
+      }
+      return -1;
+    }
+
+    function scoreConnect4Window(windowValues, token) {
+      const opponentToken = token === "Y" ? "R" : "Y";
+      const tokenCount = windowValues.filter((value) => value === token).length;
+      const emptyCount = windowValues.filter((value) => value === "").length;
+      const opponentCount = windowValues.filter((value) => value === opponentToken).length;
+      if (tokenCount === 4) return 100000;
+      if (tokenCount === 3 && emptyCount === 1) return 120;
+      if (tokenCount === 2 && emptyCount === 2) return 18;
+      if (opponentCount === 3 && emptyCount === 1) return -95;
+      if (opponentCount === 2 && emptyCount === 2) return -10;
+      return 0;
+    }
+
+    function evaluateConnect4Board(board, token) {
+      let score = 0;
+      const centerColumn = board.map((row) => row[3]);
+      score += centerColumn.filter((value) => value === token).length * 6;
+      for (let rowIndex = 0; rowIndex < 6; rowIndex += 1) {
+        for (let columnIndex = 0; columnIndex < 4; columnIndex += 1) {
+          score += scoreConnect4Window([board[rowIndex][columnIndex], board[rowIndex][columnIndex + 1], board[rowIndex][columnIndex + 2], board[rowIndex][columnIndex + 3]], token);
+        }
+      }
+      for (let rowIndex = 0; rowIndex < 3; rowIndex += 1) {
+        for (let columnIndex = 0; columnIndex < 7; columnIndex += 1) {
+          score += scoreConnect4Window([board[rowIndex][columnIndex], board[rowIndex + 1][columnIndex], board[rowIndex + 2][columnIndex], board[rowIndex + 3][columnIndex]], token);
+        }
+      }
+      for (let rowIndex = 0; rowIndex < 3; rowIndex += 1) {
+        for (let columnIndex = 0; columnIndex < 4; columnIndex += 1) {
+          score += scoreConnect4Window([board[rowIndex][columnIndex], board[rowIndex + 1][columnIndex + 1], board[rowIndex + 2][columnIndex + 2], board[rowIndex + 3][columnIndex + 3]], token);
+        }
+      }
+      for (let rowIndex = 3; rowIndex < 6; rowIndex += 1) {
+        for (let columnIndex = 0; columnIndex < 4; columnIndex += 1) {
+          score += scoreConnect4Window([board[rowIndex][columnIndex], board[rowIndex - 1][columnIndex + 1], board[rowIndex - 2][columnIndex + 2], board[rowIndex - 3][columnIndex + 3]], token);
+        }
+      }
+      return score;
+    }
+
+    function minimaxConnect4(board, depth, alpha, beta, maximizingPlayer) {
+      const winner = getConnect4Winner(board);
+      if (winner === "Y") return { score: 1000000 + depth };
+      if (winner === "R") return { score: -1000000 - depth };
+      if (winner === "draw") return { score: 0 };
+      if (depth === 0) return { score: evaluateConnect4Board(board, "Y") };
+
+      const validColumns = [];
+      for (let columnIndex = 0; columnIndex < 7; columnIndex += 1) {
+        if (getConnect4DropRow(board, columnIndex) >= 0) validColumns.push(columnIndex);
+      }
+      if (!validColumns.length) return { score: 0 };
+
+      if (maximizingPlayer) {
+        let bestResult = { score: -Infinity, column: validColumns[0] };
+        for (const columnIndex of validColumns) {
+          const dropRow = getConnect4DropRow(board, columnIndex);
+          const boardCopy = board.map((row) => [...row]);
+          boardCopy[dropRow][columnIndex] = "Y";
+          const branchResult = minimaxConnect4(boardCopy, depth - 1, alpha, beta, false);
+          if (branchResult.score > bestResult.score) {
+            bestResult = { score: branchResult.score, column: columnIndex };
+          }
+          alpha = Math.max(alpha, branchResult.score);
+          if (alpha >= beta) break;
+        }
+        return bestResult;
+      }
+
+      let bestResult = { score: Infinity, column: validColumns[0] };
+      for (const columnIndex of validColumns) {
+        const dropRow = getConnect4DropRow(board, columnIndex);
+        const boardCopy = board.map((row) => [...row]);
+        boardCopy[dropRow][columnIndex] = "R";
+        const branchResult = minimaxConnect4(boardCopy, depth - 1, alpha, beta, true);
+        if (branchResult.score < bestResult.score) {
+          bestResult = { score: branchResult.score, column: columnIndex };
+        }
+        beta = Math.min(beta, branchResult.score);
+        if (alpha >= beta) break;
+      }
+      return bestResult;
+    }
+
+    function renderConnect4Board() {
+      connect4Grid.innerHTML = "";
+      for (let rowIndex = 0; rowIndex < 6; rowIndex += 1) {
+        for (let columnIndex = 0; columnIndex < 7; columnIndex += 1) {
+          const connect4Cell = document.createElement("button");
+          connect4Cell.type = "button";
+          connect4Cell.className = "guess-cell connect4-cell";
+          const token = connect4Board[rowIndex][columnIndex];
+          if (token === "R") connect4Cell.classList.add("red");
+          if (token === "Y") connect4Cell.classList.add("yellow");
+          connect4Cell.addEventListener("click", () => {
+            if (connect4GameOver) return;
+            const playerDropRow = getConnect4DropRow(connect4Board, columnIndex);
+            if (playerDropRow < 0) return;
+            connect4Board[playerDropRow][columnIndex] = "R";
+            let currentWinner = getConnect4Winner(connect4Board);
+            if (currentWinner) {
+              connect4GameOver = true;
+              connect4Message.textContent = currentWinner === "draw" ? "Draw game." : (currentWinner === "R" ? "You win." : "AI wins.");
+              renderConnect4Board();
+              return;
+            }
+            const aiDecision = minimaxConnect4(connect4Board.map((row) => [...row]), 4, -Infinity, Infinity, true);
+            const aiDropColumn = aiDecision.column;
+            const aiDropRow = getConnect4DropRow(connect4Board, aiDropColumn);
+            if (aiDropRow >= 0) connect4Board[aiDropRow][aiDropColumn] = "Y";
+            currentWinner = getConnect4Winner(connect4Board);
+            if (currentWinner) {
+              connect4GameOver = true;
+              connect4Message.textContent = currentWinner === "draw" ? "Draw game." : (currentWinner === "R" ? "You win." : "AI wins.");
+            } else {
+              connect4Message.textContent = "Your turn.";
+            }
+            renderConnect4Board();
+          });
+          connect4Grid.appendChild(connect4Cell);
+        }
+      }
+    }
+
+    function resetConnect4Game() {
+      connect4Board = Array.from({ length: 6 }, () => Array(7).fill(""));
+      connect4GameOver = false;
+      connect4Message.textContent = "Your turn.";
+      renderConnect4Board();
+    }
+    document.getElementById("connect4Reset").addEventListener("click", resetConnect4Game);
+
+    const pongCanvas = document.getElementById("pongCanvas");
+    const pongContext = pongCanvas.getContext("2d");
+    const pongMessage = document.getElementById("pongMsg");
+    const pongState = {
+      ballX: pongCanvas.width / 2,
+      ballY: pongCanvas.height / 2,
+      ballVelocityX: 3.8,
+      ballVelocityY: 2.1,
+      paddleLeftY: 120,
+      paddleRightY: 120,
+      paddleHeight: 72,
+      paddleWidth: 10,
+      scoreYou: 0,
+      scoreAI: 0,
+      running: false,
+      moveUp: false,
+      moveDown: false
+    };
+
+    function resetPongBall() {
+      pongState.ballX = pongCanvas.width / 2;
+      pongState.ballY = pongCanvas.height / 2;
+      const horizontalDirection = Math.random() > 0.5 ? 1 : -1;
+      pongState.ballVelocityX = horizontalDirection * (3.5 + Math.random() * 1.5);
+      pongState.ballVelocityY = (Math.random() * 4) - 2;
+    }
+
+    function resetPongGame() {
+      pongState.scoreYou = 0;
+      pongState.scoreAI = 0;
+      pongState.paddleLeftY = 120;
+      pongState.paddleRightY = 120;
+      resetPongBall();
+      pongMessage.textContent = "You: 0 | AI: 0";
+      renderPong();
+    }
+
+    function renderPong() {
+      pongContext.fillStyle = "#06111f";
+      pongContext.fillRect(0, 0, pongCanvas.width, pongCanvas.height);
+      pongContext.fillStyle = "rgba(255,255,255,0.2)";
+      for (let dashedY = 0; dashedY < pongCanvas.height; dashedY += 20) {
+        pongContext.fillRect(pongCanvas.width / 2 - 1, dashedY, 2, 12);
+      }
+      pongContext.fillStyle = "#67e8f9";
+      pongContext.fillRect(16, pongState.paddleLeftY, pongState.paddleWidth, pongState.paddleHeight);
+      pongContext.fillStyle = "#fbbf24";
+      pongContext.fillRect(pongCanvas.width - 26, pongState.paddleRightY, pongState.paddleWidth, pongState.paddleHeight);
+      pongContext.beginPath();
+      pongContext.fillStyle = "#f8fafc";
+      pongContext.arc(pongState.ballX, pongState.ballY, 7, 0, Math.PI * 2);
+      pongContext.fill();
+    }
+
+    function stepPong() {
+      if (!pongState.running) return;
+      if (pongState.moveUp) pongState.paddleLeftY -= 5.2;
+      if (pongState.moveDown) pongState.paddleLeftY += 5.2;
+      pongState.paddleLeftY = Math.max(0, Math.min(pongCanvas.height - pongState.paddleHeight, pongState.paddleLeftY));
+
+      const targetRightY = pongState.ballY - pongState.paddleHeight / 2;
+      const aiSpeed = 3.1 + Math.min(2.2, Math.abs(pongState.ballVelocityX) * 0.35);
+      if (pongState.paddleRightY < targetRightY) pongState.paddleRightY += aiSpeed;
+      if (pongState.paddleRightY > targetRightY) pongState.paddleRightY -= aiSpeed;
+      pongState.paddleRightY = Math.max(0, Math.min(pongCanvas.height - pongState.paddleHeight, pongState.paddleRightY));
+
+      pongState.ballX += pongState.ballVelocityX;
+      pongState.ballY += pongState.ballVelocityY;
+
+      if (pongState.ballY <= 7 || pongState.ballY >= pongCanvas.height - 7) {
+        pongState.ballVelocityY *= -1;
+      }
+
+      const leftPaddleHit = pongState.ballX <= 28 &&
+        pongState.ballY >= pongState.paddleLeftY &&
+        pongState.ballY <= pongState.paddleLeftY + pongState.paddleHeight;
+      const rightPaddleHit = pongState.ballX >= pongCanvas.width - 28 &&
+        pongState.ballY >= pongState.paddleRightY &&
+        pongState.ballY <= pongState.paddleRightY + pongState.paddleHeight;
+
+      if (leftPaddleHit) {
+        pongState.ballVelocityX = Math.abs(pongState.ballVelocityX) + 0.2;
+        pongState.ballVelocityY += (pongState.ballY - (pongState.paddleLeftY + pongState.paddleHeight / 2)) * 0.05;
+      }
+      if (rightPaddleHit) {
+        pongState.ballVelocityX = -Math.abs(pongState.ballVelocityX) - 0.2;
+        pongState.ballVelocityY += (pongState.ballY - (pongState.paddleRightY + pongState.paddleHeight / 2)) * 0.05;
+      }
+
+      if (pongState.ballX < -12) {
+        pongState.scoreAI += 1;
+        resetPongBall();
+      }
+      if (pongState.ballX > pongCanvas.width + 12) {
+        pongState.scoreYou += 1;
+        resetPongBall();
+      }
+
+      pongMessage.textContent = "You: " + pongState.scoreYou + " | AI: " + pongState.scoreAI;
+      renderPong();
+      requestAnimationFrame(stepPong);
+    }
+
+    document.getElementById("pongStart").addEventListener("click", () => {
+      if (pongState.running) return;
+      pongState.running = true;
+      requestAnimationFrame(stepPong);
+    });
+    document.getElementById("pongReset").addEventListener("click", () => {
+      pongState.running = false;
+      resetPongGame();
+    });
+
+    resetSnakeGame();
+    reset2048();
+    resetTicGame();
+    renderWhackGrid();
+    resetConnect4Game();
+    resetPongGame();
 
     resetSnakeGame();
     reset2048();
@@ -1406,26 +1986,43 @@
       updateFlappyHud();
     });
 
+    function getActiveGamePanelId() {
+      const activePanel = document.querySelector(".game-panel.active");
+      return activePanel ? activePanel.id : "";
+    }
+
     document.addEventListener("keydown", (event) => {
+      const activeGamePanelId = getActiveGamePanelId();
       const normalizedKey = event.key.toLowerCase();
       const isMoveUp = event.code === "ArrowUp" || normalizedKey === "w";
       const isMoveDown = event.code === "ArrowDown" || normalizedKey === "s";
       const isMoveLeft = event.code === "ArrowLeft" || normalizedKey === "a";
       const isMoveRight = event.code === "ArrowRight" || normalizedKey === "d";
 
-      if (isMoveUp && snakeDirection.y !== 1) snakeNextDirection = { x: 0, y: -1 };
-      if (isMoveDown && snakeDirection.y !== -1) snakeNextDirection = { x: 0, y: 1 };
-      if (isMoveLeft && snakeDirection.x !== 1) snakeNextDirection = { x: -1, y: 0 };
-      if (isMoveRight && snakeDirection.x !== -1) snakeNextDirection = { x: 1, y: 0 };
-
-      if (isMoveUp || isMoveDown || isMoveLeft || isMoveRight) {
-        event.preventDefault();
+      if (activeGamePanelId === "snake") {
+        if (isMoveUp && snakeDirection.y !== 1) snakeNextDirection = { x: 0, y: -1 };
+        if (isMoveDown && snakeDirection.y !== -1) snakeNextDirection = { x: 0, y: 1 };
+        if (isMoveLeft && snakeDirection.x !== 1) snakeNextDirection = { x: -1, y: 0 };
+        if (isMoveRight && snakeDirection.x !== -1) snakeNextDirection = { x: 1, y: 0 };
       }
 
-      if (isMoveUp) move2048("up");
-      if (isMoveDown) move2048("down");
-      if (isMoveLeft) move2048("left");
-      if (isMoveRight) move2048("right");
+      if (activeGamePanelId === "puzzle2048") {
+        if (isMoveUp) move2048("up");
+        if (isMoveDown) move2048("down");
+        if (isMoveLeft) move2048("left");
+        if (isMoveRight) move2048("right");
+      }
+
+      const isPongUp = normalizedKey === "w";
+      const isPongDown = normalizedKey === "s";
+      if (activeGamePanelId === "pong") {
+        if (isPongUp) pongState.moveUp = true;
+        if (isPongDown) pongState.moveDown = true;
+      }
+
+      if (isMoveUp || isMoveDown || isMoveLeft || isMoveRight || isPongUp || isPongDown) {
+        event.preventDefault();
+      }
 
       if (event.code === "Space") {
         event.preventDefault();
@@ -1435,6 +2032,12 @@
         flappyGame.isPaused = !flappyGame.isPaused;
         updateFlappyHud();
       }
+    });
+
+    document.addEventListener("keyup", (event) => {
+      const normalizedKey = event.key.toLowerCase();
+      if (normalizedKey === "w") pongState.moveUp = false;
+      if (normalizedKey === "s") pongState.moveDown = false;
     });
 
     flappyCanvas.addEventListener("click", () => {

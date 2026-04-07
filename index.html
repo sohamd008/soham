@@ -537,7 +537,7 @@
       </div>
 
       <div id="snake" class="game-panel">
-        <p class="muted">Use arrow keys. Eat food, avoid walls and your body.</p>
+        <p class="muted">Use <b>WASD</b> (arrows also work). Eat food, avoid walls and your body.</p>
         <canvas id="snakeCanvas" width="360" height="360" style="width:100%;max-width:360px;border:1px solid var(--glass-border);border-radius:12px;background:rgba(8,12,22,0.5);display:block;"></canvas>
         <div class="row">
           <button id="snakeStart" class="btn primary" type="button">Start</button>
@@ -547,7 +547,7 @@
       </div>
 
       <div id="puzzle2048" class="game-panel">
-        <p class="muted">Use arrow keys to merge numbers. Reach 2048.</p>
+        <p class="muted">Use <b>WASD</b> (arrows also work) to merge numbers. Reach 2048.</p>
         <div id="board2048" class="guess-grid" style="max-width:320px;grid-template-columns:repeat(4,minmax(0,1fr));"></div>
         <div class="row">
           <button id="reset2048" class="btn" type="button">New Game</button>
@@ -1407,15 +1407,25 @@
     });
 
     document.addEventListener("keydown", (event) => {
-      if (event.code === "ArrowUp" && snakeDirection.y !== 1) snakeNextDirection = { x: 0, y: -1 };
-      if (event.code === "ArrowDown" && snakeDirection.y !== -1) snakeNextDirection = { x: 0, y: 1 };
-      if (event.code === "ArrowLeft" && snakeDirection.x !== 1) snakeNextDirection = { x: -1, y: 0 };
-      if (event.code === "ArrowRight" && snakeDirection.x !== -1) snakeNextDirection = { x: 1, y: 0 };
+      const normalizedKey = event.key.toLowerCase();
+      const isMoveUp = event.code === "ArrowUp" || normalizedKey === "w";
+      const isMoveDown = event.code === "ArrowDown" || normalizedKey === "s";
+      const isMoveLeft = event.code === "ArrowLeft" || normalizedKey === "a";
+      const isMoveRight = event.code === "ArrowRight" || normalizedKey === "d";
 
-      if (event.code === "ArrowUp") move2048("up");
-      if (event.code === "ArrowDown") move2048("down");
-      if (event.code === "ArrowLeft") move2048("left");
-      if (event.code === "ArrowRight") move2048("right");
+      if (isMoveUp && snakeDirection.y !== 1) snakeNextDirection = { x: 0, y: -1 };
+      if (isMoveDown && snakeDirection.y !== -1) snakeNextDirection = { x: 0, y: 1 };
+      if (isMoveLeft && snakeDirection.x !== 1) snakeNextDirection = { x: -1, y: 0 };
+      if (isMoveRight && snakeDirection.x !== -1) snakeNextDirection = { x: 1, y: 0 };
+
+      if (isMoveUp || isMoveDown || isMoveLeft || isMoveRight) {
+        event.preventDefault();
+      }
+
+      if (isMoveUp) move2048("up");
+      if (isMoveDown) move2048("down");
+      if (isMoveLeft) move2048("left");
+      if (isMoveRight) move2048("right");
 
       if (event.code === "Space") {
         event.preventDefault();

@@ -812,8 +812,10 @@
       birdY: 150,
       birdVelocityY: 0,
       birdRadius: 14,
-      gravityPerFrame: 0.32,
-      jumpVelocity: -6.2,
+      gravityPerFrame: 0.36,
+      jumpVelocity: -5.9,
+      maxFallVelocityPerFrame: 7.2,
+      minRiseVelocityPerFrame: -7.0,
       pipeWidth: 64,
       basePipeGap: 122,
       pipeSpeed: 2.25,
@@ -824,6 +826,8 @@
       isGameOver: false,
       animationFrameId: null,
       lastRenderTime: 0,
+      targetFrameMs: 16.6667,
+      maxDeltaMs: 40,
       backgroundOffset: 0,
       pipes: []
     };
@@ -870,6 +874,7 @@
         createFlappyPipe(flappyCanvas.width + 320)
       ];
       flappyGame.backgroundOffset = 0;
+      flappyGame.lastRenderTime = 0;
       updateFlappyHud();
     }
 
@@ -967,7 +972,8 @@
       }
 
       if (flappyGame.isPaused) return;
-      flappyGame.birdVelocityY = flappyGame.jumpVelocity;
+      const boostedJumpVelocity = flappyGame.jumpVelocity + Math.min(0, flappyGame.birdVelocityY * 0.08);
+      flappyGame.birdVelocityY = Math.max(flappyGame.minRiseVelocityPerFrame, boostedJumpVelocity);
       updateFlappyHud();
     }
 
@@ -994,12 +1000,13 @@
       flappyContext.textAlign = "start";
     }
 
-    function updateFlappyWorld() {
+    function updateFlappyWorld(deltaScale) {
       if (!flappyGame.isRunning || flappyGame.isPaused || flappyGame.isGameOver) return;
 
-      flappyGame.birdVelocityY += flappyGame.gravityPerFrame;
-      flappyGame.birdY += flappyGame.birdVelocityY;
-      flappyGame.backgroundOffset += flappyGame.pipeSpeed;
+      flappyGame.birdVelocityY += flappyGame.gravityPerFrame * deltaScale;
+      flappyGame.birdVelocityY = Math.min(flappyGame.maxFallVelocityPerFrame, flappyGame.birdVelocityY);
+      flappyGame.birdY += flappyGame.birdVelocityY * deltaScale;
+      flappyGame.backgroundOffset += flappyGame.pipeSpeed * deltaScale;
 
       if (flappyGame.birdY - flappyGame.birdRadius < 0) {
         flappyGame.birdY = flappyGame.birdRadius;
@@ -1011,7 +1018,7 @@
       }
 
       flappyGame.pipes.forEach((pipe) => {
-        pipe.x -= flappyGame.pipeSpeed;
+        pipe.x -= flappyGame.pipeSpeed * deltaScale;
 
         const birdLeftEdge = flappyGame.birdX - flappyGame.birdRadius;
         const birdRightEdge = flappyGame.birdX + flappyGame.birdRadius;
@@ -1047,9 +1054,11 @@
       if (!flappyGame.lastRenderTime) {
         flappyGame.lastRenderTime = timestamp;
       }
+      const frameDeltaMs = Math.min(flappyGame.maxDeltaMs, timestamp - flappyGame.lastRenderTime);
+      const deltaScale = frameDeltaMs / flappyGame.targetFrameMs;
       flappyGame.lastRenderTime = timestamp;
 
-      updateFlappyWorld();
+      updateFlappyWorld(deltaScale);
 
       drawFlappyBackground();
       flappyGame.pipes.forEach(drawFlappyPipe);

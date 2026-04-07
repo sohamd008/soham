@@ -512,10 +512,10 @@
 
       <div class="game-tabs">
         <button class="tab active" data-game="flappy" type="button">Flappy Bird</button>
-        <button class="tab" data-game="guess" type="button">Number Guess</button>
-        <button class="tab" data-game="reaction" type="button">Reaction Test</button>
-        <button class="tab" data-game="rps" type="button">Rock Paper Scissors</button>
-        <button class="tab" data-game="memory" type="button">Memory Tap</button>
+        <button class="tab" data-game="snake" type="button">Snake</button>
+        <button class="tab" data-game="puzzle2048" type="button">2048 Lite</button>
+        <button class="tab" data-game="tic" type="button">Tic Tac Toe</button>
+        <button class="tab" data-game="whack" type="button">Whack-a-Mole</button>
       </div>
 
       <div id="flappy" class="game-panel active">
@@ -536,38 +536,41 @@
         </div>
       </div>
 
-      <div id="guess" class="game-panel">
-        <p class="muted">Guess a number from 1 to 20.</p>
+      <div id="snake" class="game-panel">
+        <p class="muted">Use arrow keys. Eat food, avoid walls and your body.</p>
+        <canvas id="snakeCanvas" width="360" height="360" style="width:100%;max-width:360px;border:1px solid var(--glass-border);border-radius:12px;background:rgba(8,12,22,0.5);display:block;"></canvas>
         <div class="row">
-          <input id="guessInput" type="number" min="1" max="20" placeholder="Enter number">
-          <button id="guessBtn" class="btn primary" type="button">Guess</button>
-          <button id="guessReset" class="btn" type="button">Reset</button>
+          <button id="snakeStart" class="btn primary" type="button">Start</button>
+          <button id="snakeReset" class="btn" type="button">Reset</button>
         </div>
-        <p id="guessMsg" class="muted">Start guessing.</p>
+        <p id="snakeMsg" class="muted">Score: 0 | Best: 0</p>
       </div>
 
-      <div id="reaction" class="game-panel">
-        <p class="muted">Click start and hit the button as soon as it turns green.</p>
-        <button id="reactionStart" class="btn primary" type="button">Start</button>
-        <button id="reactionTarget" class="btn" type="button" disabled>Wait...</button>
-        <p id="reactionMsg" class="muted">No attempts yet.</p>
-      </div>
-
-      <div id="rps" class="game-panel">
-        <p class="muted">Pick your move.</p>
+      <div id="puzzle2048" class="game-panel">
+        <p class="muted">Use arrow keys to merge numbers. Reach 2048.</p>
+        <div id="board2048" class="guess-grid" style="max-width:320px;grid-template-columns:repeat(4,minmax(0,1fr));"></div>
         <div class="row">
-          <button class="btn rps" data-move="rock" type="button">Rock</button>
-          <button class="btn rps" data-move="paper" type="button">Paper</button>
-          <button class="btn rps" data-move="scissors" type="button">Scissors</button>
+          <button id="reset2048" class="btn" type="button">New Game</button>
         </div>
-        <p id="rpsMsg" class="muted">Let's play.</p>
+        <p id="msg2048" class="muted">Score: 0</p>
       </div>
 
-      <div id="memory" class="game-panel">
-        <p class="muted">Memorize the highlighted number, then click it.</p>
-        <button id="memoryStart" class="btn primary" type="button">Start Round</button>
-        <div id="memoryGrid" class="guess-grid"></div>
-        <p id="memoryMsg" class="muted">Press start to begin.</p>
+      <div id="tic" class="game-panel">
+        <p class="muted">You are X. AI is O and plays optimal moves.</p>
+        <div id="ticGrid" class="guess-grid" style="max-width:270px;grid-template-columns:repeat(3,minmax(0,1fr));"></div>
+        <div class="row">
+          <button id="ticReset" class="btn" type="button">Reset</button>
+        </div>
+        <p id="ticMsg" class="muted">Your turn.</p>
+      </div>
+
+      <div id="whack" class="game-panel">
+        <p class="muted">Hit moles quickly. 20 second round.</p>
+        <div id="whackGrid" class="guess-grid" style="max-width:320px;grid-template-columns:repeat(3,minmax(0,1fr));"></div>
+        <div class="row">
+          <button id="whackStart" class="btn primary" type="button">Start Round</button>
+        </div>
+        <p id="whackMsg" class="muted">Score: 0 | Time: 20</p>
       </div>
     </section>
 
@@ -698,104 +701,368 @@
       });
     });
 
-    let guessTarget = Math.floor(Math.random() * 20) + 1;
-    document.getElementById("guessBtn").addEventListener("click", () => {
-      const val = Number(document.getElementById("guessInput").value);
-      const msg = document.getElementById("guessMsg");
-      if (!val || val < 1 || val > 20) {
-        msg.textContent = "Choose a number between 1 and 20.";
-        return;
-      }
-      if (val === guessTarget) msg.textContent = "Correct! Great guess.";
-      else msg.textContent = val < guessTarget ? "Too low." : "Too high.";
-    });
-    document.getElementById("guessReset").addEventListener("click", () => {
-      guessTarget = Math.floor(Math.random() * 20) + 1;
-      document.getElementById("guessMsg").textContent = "Reset done. Start guessing.";
-      document.getElementById("guessInput").value = "";
-    });
+    const snakeCanvas = document.getElementById("snakeCanvas");
+    const snakeContext = snakeCanvas.getContext("2d");
+    const snakeMessage = document.getElementById("snakeMsg");
+    const snakeCellSize = 18;
+    const snakeGridSize = snakeCanvas.width / snakeCellSize;
+    let snakeDirection = { x: 1, y: 0 };
+    let snakeNextDirection = { x: 1, y: 0 };
+    let snakeBody = [{ x: 6, y: 10 }, { x: 5, y: 10 }, { x: 4, y: 10 }];
+    let snakeFood = { x: 14, y: 10 };
+    let snakeScore = 0;
+    let snakeBestScore = Number(localStorage.getItem("snake_best") || 0);
+    let snakeTimer = null;
+    let snakeGameOver = false;
 
-    const reactionStart = document.getElementById("reactionStart");
-    const reactionTarget = document.getElementById("reactionTarget");
-    const reactionMsg = document.getElementById("reactionMsg");
-    let reactionStartTime = 0;
-    let reactionReady = false;
-    reactionStart.addEventListener("click", () => {
-      reactionReady = false;
-      reactionTarget.disabled = true;
-      reactionTarget.textContent = "Wait...";
-      reactionTarget.style.background = "rgba(255,255,255,0.08)";
-      reactionMsg.textContent = "Get ready...";
-      const delay = 1200 + Math.floor(Math.random() * 2200);
-      setTimeout(() => {
-        reactionReady = true;
-        reactionStartTime = performance.now();
-        reactionTarget.disabled = false;
-        reactionTarget.textContent = "CLICK!";
-        reactionTarget.style.background = "var(--ok)";
-      }, delay);
-    });
-    reactionTarget.addEventListener("click", () => {
-      if (!reactionReady) return;
-      const ms = Math.floor(performance.now() - reactionStartTime);
-      reactionMsg.textContent = "Reaction time: " + ms + " ms";
-      reactionReady = false;
-      reactionTarget.disabled = true;
-      reactionTarget.textContent = "Wait...";
-      reactionTarget.style.background = "rgba(255,255,255,0.08)";
-    });
-
-    const rpsMoves = ["rock", "paper", "scissors"];
-    const rpsMsg = document.getElementById("rpsMsg");
-    document.querySelectorAll(".rps").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const you = btn.dataset.move;
-        const cpu = rpsMoves[Math.floor(Math.random() * 3)];
-        let result = "Draw";
-        if (
-          (you === "rock" && cpu === "scissors") ||
-          (you === "paper" && cpu === "rock") ||
-          (you === "scissors" && cpu === "paper")
-        ) result = "You win";
-        else if (you !== cpu) result = "CPU wins";
-        rpsMsg.textContent = "You: " + you + " | CPU: " + cpu + " -> " + result;
-      });
-    });
-
-    const memoryGrid = document.getElementById("memoryGrid");
-    const memoryMsg = document.getElementById("memoryMsg");
-    let memoryTarget = 1;
-    function buildMemoryGrid() {
-      memoryGrid.innerHTML = "";
-      for (let i = 1; i <= 12; i += 1) {
-        const cell = document.createElement("button");
-        cell.type = "button";
-        cell.className = "guess-cell";
-        cell.textContent = String(i);
-        cell.addEventListener("click", () => {
-          if (i === memoryTarget) memoryMsg.textContent = "Correct.";
-          else memoryMsg.textContent = "Wrong. Target was " + memoryTarget + ".";
-        });
-        memoryGrid.appendChild(cell);
+    function spawnSnakeFood() {
+      let foundSpot = false;
+      while (!foundSpot) {
+        const randomFoodX = Math.floor(Math.random() * snakeGridSize);
+        const randomFoodY = Math.floor(Math.random() * snakeGridSize);
+        const isOnSnake = snakeBody.some((segment) => segment.x === randomFoodX && segment.y === randomFoodY);
+        if (!isOnSnake) {
+          snakeFood = { x: randomFoodX, y: randomFoodY };
+          foundSpot = true;
+        }
       }
     }
-    buildMemoryGrid();
-    document.getElementById("memoryStart").addEventListener("click", () => {
-      memoryTarget = Math.floor(Math.random() * 12) + 1;
-      memoryMsg.textContent = "Memorize: " + memoryTarget;
-      [...memoryGrid.children].forEach((node) => {
-        node.style.borderColor = "var(--glass-border)";
-        if (Number(node.textContent) === memoryTarget) {
-          node.style.borderColor = "var(--primary)";
+
+    function renderSnake() {
+      snakeContext.fillStyle = "#06111f";
+      snakeContext.fillRect(0, 0, snakeCanvas.width, snakeCanvas.height);
+      snakeContext.fillStyle = "rgba(255,255,255,0.04)";
+      for (let gridRow = 0; gridRow < snakeGridSize; gridRow += 1) {
+        for (let gridColumn = 0; gridColumn < snakeGridSize; gridColumn += 1) {
+          snakeContext.fillRect(gridColumn * snakeCellSize + 1, gridRow * snakeCellSize + 1, snakeCellSize - 2, snakeCellSize - 2);
         }
+      }
+
+      snakeContext.fillStyle = "#fb7185";
+      snakeContext.fillRect(snakeFood.x * snakeCellSize + 2, snakeFood.y * snakeCellSize + 2, snakeCellSize - 4, snakeCellSize - 4);
+
+      snakeBody.forEach((segment, index) => {
+        snakeContext.fillStyle = index === 0 ? "#67e8f9" : "#22c55e";
+        snakeContext.fillRect(segment.x * snakeCellSize + 2, segment.y * snakeCellSize + 2, snakeCellSize - 4, snakeCellSize - 4);
       });
-      setTimeout(() => {
-        memoryMsg.textContent = "Now click the remembered number.";
-        [...memoryGrid.children].forEach((node) => {
-          node.style.borderColor = "var(--glass-border)";
-        });
-      }, 1200);
+    }
+
+    function updateSnakeMessage(extraText) {
+      snakeMessage.textContent = "Score: " + snakeScore + " | Best: " + snakeBestScore + (extraText ? " | " + extraText : "");
+    }
+
+    function resetSnakeGame() {
+      snakeDirection = { x: 1, y: 0 };
+      snakeNextDirection = { x: 1, y: 0 };
+      snakeBody = [{ x: 6, y: 10 }, { x: 5, y: 10 }, { x: 4, y: 10 }];
+      snakeScore = 0;
+      snakeGameOver = false;
+      spawnSnakeFood();
+      renderSnake();
+      updateSnakeMessage("Ready");
+    }
+
+    function stepSnakeGame() {
+      if (snakeGameOver) return;
+      snakeDirection = snakeNextDirection;
+      const currentHead = snakeBody[0];
+      const nextHead = { x: currentHead.x + snakeDirection.x, y: currentHead.y + snakeDirection.y };
+      const hitWall = nextHead.x < 0 || nextHead.y < 0 || nextHead.x >= snakeGridSize || nextHead.y >= snakeGridSize;
+      const hitSelf = snakeBody.some((segment) => segment.x === nextHead.x && segment.y === nextHead.y);
+
+      if (hitWall || hitSelf) {
+        snakeGameOver = true;
+        clearInterval(snakeTimer);
+        snakeTimer = null;
+        updateSnakeMessage("Game over");
+        return;
+      }
+
+      snakeBody.unshift(nextHead);
+      const ateFood = nextHead.x === snakeFood.x && nextHead.y === snakeFood.y;
+      if (ateFood) {
+        snakeScore += 1;
+        if (snakeScore > snakeBestScore) {
+          snakeBestScore = snakeScore;
+          localStorage.setItem("snake_best", String(snakeBestScore));
+        }
+        spawnSnakeFood();
+      } else {
+        snakeBody.pop();
+      }
+
+      renderSnake();
+      updateSnakeMessage();
+    }
+
+    document.getElementById("snakeStart").addEventListener("click", () => {
+      if (snakeTimer) return;
+      if (snakeGameOver) resetSnakeGame();
+      snakeTimer = setInterval(stepSnakeGame, 105);
+      updateSnakeMessage("Running");
     });
+    document.getElementById("snakeReset").addEventListener("click", () => {
+      clearInterval(snakeTimer);
+      snakeTimer = null;
+      resetSnakeGame();
+    });
+
+    const board2048 = document.getElementById("board2048");
+    const message2048 = document.getElementById("msg2048");
+    let puzzle2048Grid = [];
+    let puzzle2048Score = 0;
+
+    function create2048Cell(rowIndex, columnIndex, value) {
+      const cellElement = document.createElement("button");
+      cellElement.type = "button";
+      cellElement.className = "guess-cell";
+      cellElement.style.height = "64px";
+      cellElement.style.fontWeight = "700";
+      cellElement.textContent = value === 0 ? "" : String(value);
+      cellElement.style.background = value === 0 ? "rgba(255,255,255,0.05)" : "rgba(103,232,249,0.18)";
+      cellElement.dataset.row = String(rowIndex);
+      cellElement.dataset.col = String(columnIndex);
+      return cellElement;
+    }
+
+    function render2048() {
+      board2048.innerHTML = "";
+      for (let rowIndex = 0; rowIndex < 4; rowIndex += 1) {
+        for (let columnIndex = 0; columnIndex < 4; columnIndex += 1) {
+          board2048.appendChild(create2048Cell(rowIndex, columnIndex, puzzle2048Grid[rowIndex][columnIndex]));
+        }
+      }
+      message2048.textContent = "Score: " + puzzle2048Score;
+    }
+
+    function addRandom2048Tile() {
+      const emptyCells = [];
+      for (let rowIndex = 0; rowIndex < 4; rowIndex += 1) {
+        for (let columnIndex = 0; columnIndex < 4; columnIndex += 1) {
+          if (puzzle2048Grid[rowIndex][columnIndex] === 0) {
+            emptyCells.push({ rowIndex, columnIndex });
+          }
+        }
+      }
+      if (!emptyCells.length) return;
+      const randomChoice = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+      puzzle2048Grid[randomChoice.rowIndex][randomChoice.columnIndex] = Math.random() < 0.9 ? 2 : 4;
+    }
+
+    function reset2048() {
+      puzzle2048Grid = Array.from({ length: 4 }, () => Array(4).fill(0));
+      puzzle2048Score = 0;
+      addRandom2048Tile();
+      addRandom2048Tile();
+      render2048();
+    }
+
+    function compress2048Row(values) {
+      const filteredValues = values.filter((value) => value !== 0);
+      const mergedValues = [];
+      for (let valueIndex = 0; valueIndex < filteredValues.length; valueIndex += 1) {
+        if (filteredValues[valueIndex] === filteredValues[valueIndex + 1]) {
+          const mergedValue = filteredValues[valueIndex] * 2;
+          mergedValues.push(mergedValue);
+          puzzle2048Score += mergedValue;
+          valueIndex += 1;
+        } else {
+          mergedValues.push(filteredValues[valueIndex]);
+        }
+      }
+      while (mergedValues.length < 4) mergedValues.push(0);
+      return mergedValues;
+    }
+
+    function move2048(direction) {
+      const previousState = JSON.stringify(puzzle2048Grid);
+      if (direction === "left") {
+        puzzle2048Grid = puzzle2048Grid.map((row) => compress2048Row(row));
+      } else if (direction === "right") {
+        puzzle2048Grid = puzzle2048Grid.map((row) => compress2048Row([...row].reverse()).reverse());
+      } else if (direction === "up") {
+        for (let columnIndex = 0; columnIndex < 4; columnIndex += 1) {
+          const columnValues = [puzzle2048Grid[0][columnIndex], puzzle2048Grid[1][columnIndex], puzzle2048Grid[2][columnIndex], puzzle2048Grid[3][columnIndex]];
+          const updatedColumn = compress2048Row(columnValues);
+          for (let rowIndex = 0; rowIndex < 4; rowIndex += 1) puzzle2048Grid[rowIndex][columnIndex] = updatedColumn[rowIndex];
+        }
+      } else if (direction === "down") {
+        for (let columnIndex = 0; columnIndex < 4; columnIndex += 1) {
+          const columnValues = [puzzle2048Grid[3][columnIndex], puzzle2048Grid[2][columnIndex], puzzle2048Grid[1][columnIndex], puzzle2048Grid[0][columnIndex]];
+          const updatedColumn = compress2048Row(columnValues);
+          for (let rowIndex = 0; rowIndex < 4; rowIndex += 1) puzzle2048Grid[3 - rowIndex][columnIndex] = updatedColumn[rowIndex];
+        }
+      }
+      if (JSON.stringify(puzzle2048Grid) !== previousState) addRandom2048Tile();
+      render2048();
+    }
+
+    document.getElementById("reset2048").addEventListener("click", reset2048);
+
+    const ticGrid = document.getElementById("ticGrid");
+    const ticMessage = document.getElementById("ticMsg");
+    let ticBoard = Array(9).fill("");
+    let ticGameDone = false;
+
+    function evaluateTicWinner(board) {
+      const winPatterns = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],
+        [0, 4, 8], [2, 4, 6]
+      ];
+      for (const [a, b, c] of winPatterns) {
+        if (board[a] && board[a] === board[b] && board[b] === board[c]) return board[a];
+      }
+      return board.includes("") ? null : "draw";
+    }
+
+    function minimaxTic(board, isMaximizing) {
+      const result = evaluateTicWinner(board);
+      if (result === "O") return 10;
+      if (result === "X") return -10;
+      if (result === "draw") return 0;
+
+      if (isMaximizing) {
+        let bestScore = -Infinity;
+        for (let index = 0; index < board.length; index += 1) {
+          if (!board[index]) {
+            board[index] = "O";
+            bestScore = Math.max(bestScore, minimaxTic(board, false));
+            board[index] = "";
+          }
+        }
+        return bestScore;
+      }
+
+      let bestScore = Infinity;
+      for (let index = 0; index < board.length; index += 1) {
+        if (!board[index]) {
+          board[index] = "X";
+          bestScore = Math.min(bestScore, minimaxTic(board, true));
+          board[index] = "";
+        }
+      }
+      return bestScore;
+    }
+
+    function getBestTicMove() {
+      let bestScore = -Infinity;
+      let bestMoveIndex = -1;
+      for (let index = 0; index < ticBoard.length; index += 1) {
+        if (!ticBoard[index]) {
+          ticBoard[index] = "O";
+          const score = minimaxTic(ticBoard, false);
+          ticBoard[index] = "";
+          if (score > bestScore) {
+            bestScore = score;
+            bestMoveIndex = index;
+          }
+        }
+      }
+      return bestMoveIndex;
+    }
+
+    function renderTicBoard() {
+      ticGrid.innerHTML = "";
+      ticBoard.forEach((value, index) => {
+        const ticCellButton = document.createElement("button");
+        ticCellButton.type = "button";
+        ticCellButton.className = "guess-cell";
+        ticCellButton.style.height = "82px";
+        ticCellButton.style.fontSize = "1.25rem";
+        ticCellButton.style.fontWeight = "700";
+        ticCellButton.textContent = value;
+        ticCellButton.addEventListener("click", () => {
+          if (ticGameDone || ticBoard[index]) return;
+          ticBoard[index] = "X";
+          const playerResult = evaluateTicWinner(ticBoard);
+          if (playerResult) {
+            ticGameDone = true;
+            ticMessage.textContent = playerResult === "draw" ? "Draw game." : playerResult + " wins.";
+            renderTicBoard();
+            return;
+          }
+          const aiMove = getBestTicMove();
+          if (aiMove >= 0) ticBoard[aiMove] = "O";
+          const aiResult = evaluateTicWinner(ticBoard);
+          if (aiResult) {
+            ticGameDone = true;
+            ticMessage.textContent = aiResult === "draw" ? "Draw game." : aiResult + " wins.";
+          }
+          renderTicBoard();
+        });
+        ticGrid.appendChild(ticCellButton);
+      });
+    }
+
+    function resetTicGame() {
+      ticBoard = Array(9).fill("");
+      ticGameDone = false;
+      ticMessage.textContent = "Your turn.";
+      renderTicBoard();
+    }
+    document.getElementById("ticReset").addEventListener("click", resetTicGame);
+
+    const whackGrid = document.getElementById("whackGrid");
+    const whackMessage = document.getElementById("whackMsg");
+    let whackScore = 0;
+    let whackTimeLeft = 20;
+    let whackActiveIndex = -1;
+    let whackRoundTimer = null;
+    let whackMoleTimer = null;
+
+    function renderWhackGrid() {
+      whackGrid.innerHTML = "";
+      for (let holeIndex = 0; holeIndex < 9; holeIndex += 1) {
+        const holeButton = document.createElement("button");
+        holeButton.type = "button";
+        holeButton.className = "guess-cell";
+        holeButton.style.height = "72px";
+        holeButton.textContent = holeIndex === whackActiveIndex ? "Mole" : "";
+        holeButton.style.background = holeIndex === whackActiveIndex ? "rgba(251,113,133,0.26)" : "rgba(255,255,255,0.08)";
+        holeButton.addEventListener("click", () => {
+          if (holeIndex === whackActiveIndex) {
+            whackScore += 1;
+            whackActiveIndex = -1;
+            renderWhackGrid();
+            whackMessage.textContent = "Score: " + whackScore + " | Time: " + whackTimeLeft;
+          }
+        });
+        whackGrid.appendChild(holeButton);
+      }
+    }
+
+    function stopWhackRound() {
+      clearInterval(whackRoundTimer);
+      clearInterval(whackMoleTimer);
+      whackRoundTimer = null;
+      whackMoleTimer = null;
+      whackActiveIndex = -1;
+      renderWhackGrid();
+      whackMessage.textContent = "Round over. Score: " + whackScore;
+    }
+
+    function startWhackRound() {
+      stopWhackRound();
+      whackScore = 0;
+      whackTimeLeft = 20;
+      whackMessage.textContent = "Score: 0 | Time: 20";
+      whackMoleTimer = setInterval(() => {
+        whackActiveIndex = Math.floor(Math.random() * 9);
+        renderWhackGrid();
+      }, 520);
+      whackRoundTimer = setInterval(() => {
+        whackTimeLeft -= 1;
+        whackMessage.textContent = "Score: " + whackScore + " | Time: " + whackTimeLeft;
+        if (whackTimeLeft <= 0) stopWhackRound();
+      }, 1000);
+    }
+    document.getElementById("whackStart").addEventListener("click", startWhackRound);
+
+    resetSnakeGame();
+    reset2048();
+    resetTicGame();
+    renderWhackGrid();
 
     const flappyCanvas = document.getElementById("flappyCanvas");
     const flappyContext = flappyCanvas.getContext("2d");
@@ -1140,6 +1407,16 @@
     });
 
     document.addEventListener("keydown", (event) => {
+      if (event.code === "ArrowUp" && snakeDirection.y !== 1) snakeNextDirection = { x: 0, y: -1 };
+      if (event.code === "ArrowDown" && snakeDirection.y !== -1) snakeNextDirection = { x: 0, y: 1 };
+      if (event.code === "ArrowLeft" && snakeDirection.x !== 1) snakeNextDirection = { x: -1, y: 0 };
+      if (event.code === "ArrowRight" && snakeDirection.x !== -1) snakeNextDirection = { x: 1, y: 0 };
+
+      if (event.code === "ArrowUp") move2048("up");
+      if (event.code === "ArrowDown") move2048("down");
+      if (event.code === "ArrowLeft") move2048("left");
+      if (event.code === "ArrowRight") move2048("right");
+
       if (event.code === "Space") {
         event.preventDefault();
         triggerFlappyJump();

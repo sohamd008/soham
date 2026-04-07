@@ -75,6 +75,7 @@
       margin: 0 auto;
       position: relative;
       z-index: 1;
+      padding-bottom: 26px;
     }
 
     .glass {
@@ -84,6 +85,10 @@
       -webkit-backdrop-filter: blur(14px);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
+    }
+
+    .glass:hover {
+      border-color: rgba(103, 232, 249, 0.45);
     }
 
     nav {
@@ -97,6 +102,7 @@
       align-items: center;
       gap: 10px;
       flex-wrap: wrap;
+      box-shadow: 0 12px 28px rgba(4, 10, 28, 0.26);
     }
 
     .brand {
@@ -131,6 +137,7 @@
       grid-template-columns: 1.1fr 0.9fr;
       gap: 20px;
       align-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.24);
     }
 
     h1 {
@@ -162,6 +169,7 @@
     section {
       margin-top: 20px;
       padding: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
     }
     h2 { margin: 0 0 14px; font-size: 1.45rem; }
 
@@ -237,6 +245,11 @@
       background: rgba(255, 255, 255, 0.08);
     }
 
+    .mini-tool h3 {
+      margin-top: 0;
+      margin-bottom: 6px;
+    }
+
     .row {
       display: flex;
       gap: 8px;
@@ -260,6 +273,12 @@
       padding: 8px 11px;
       cursor: pointer;
       background: rgba(255, 255, 255, 0.08);
+      transition: 0.15s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(103, 232, 249, 0.8);
     }
 
     .btn.primary {
@@ -277,15 +296,20 @@
       gap: 8px;
       flex-wrap: wrap;
       margin-bottom: 12px;
+      padding: 8px;
+      border: 1px solid var(--glass-border);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.04);
     }
 
     .tab {
       border: 1px solid var(--glass-border);
       border-radius: 10px;
       padding: 8px 11px;
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.05);
       color: var(--text);
       cursor: pointer;
+      font-weight: 600;
     }
     .tab.active {
       border-color: rgba(103, 232, 249, 0.8);
@@ -472,6 +496,119 @@
       max-width: min(100%, 420px) !important;
     }
 
+    .arcade-canvas {
+      width: 100%;
+      max-width: 560px;
+      aspect-ratio: 560 / 300;
+      height: auto;
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      background: rgba(8, 12, 22, 0.5);
+      display: block;
+      box-shadow: inset 0 0 50px rgba(8, 12, 22, 0.45);
+    }
+
+    .memory-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      width: min(100%, 420px);
+      margin-top: 10px;
+    }
+
+    .memory-card {
+      aspect-ratio: 1 / 1;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      background: linear-gradient(160deg, rgba(99,102,241,0.35), rgba(6,182,212,0.2));
+      color: transparent;
+      font-size: clamp(1.1rem, 3.5vw, 1.6rem);
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .memory-card.revealed,
+    .memory-card.matched {
+      color: var(--text);
+      background: linear-gradient(160deg, rgba(16,185,129,0.35), rgba(103,232,249,0.2));
+      box-shadow: 0 0 16px rgba(16, 185, 129, 0.2);
+    }
+
+    .memory-card.matched {
+      border-color: rgba(52, 211, 153, 0.85);
+    }
+
+    .notes-app {
+      display: grid;
+      grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .notes-sidebar {
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 10px;
+      max-height: 360px;
+      overflow: auto;
+    }
+
+    .notes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .note-item {
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      padding: 8px;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      font-size: 0.83rem;
+    }
+
+    .note-item.active {
+      border-color: rgba(103, 232, 249, 0.8);
+      box-shadow: inset 0 0 0 1px rgba(103, 232, 249, 0.5);
+    }
+
+    .notes-editor {
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .notes-input,
+    .notes-textarea {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text);
+      padding: 10px;
+    }
+
+    .notes-textarea {
+      min-height: 170px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    .notes-status {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
     .reveal { opacity: 0; transform: translateY(12px); transition: 0.4s ease; }
     .reveal.show { opacity: 1; transform: translateY(0); }
 
@@ -485,6 +622,7 @@
     @media (max-width: 980px) {
       .hero, .layout-2 { grid-template-columns: 1fr; }
       .grid { grid-template-columns: 1fr 1fr; }
+      .notes-app { grid-template-columns: 1fr; }
     }
     @media (max-width: 650px) {
       .grid { grid-template-columns: 1fr; }
@@ -590,8 +728,26 @@
 
         <article class="mini-tool">
           <h3>Quick Notes</h3>
-          <p class="muted">Saved automatically in your browser local storage.</p>
-          <textarea id="notesBox" rows="6" style="width:100%; border-radius:10px; border:1px solid var(--glass-border); background:rgba(255,255,255,0.07); color:var(--text); padding:10px; resize:vertical;"></textarea>
+          <p class="muted">Feature-rich local notes: multiple notes, autosave, search, export/import.</p>
+          <div class="notes-app">
+            <div class="notes-sidebar">
+              <input id="noteSearchInput" class="notes-input" type="text" placeholder="Search notes...">
+              <div id="notesList" class="notes-list"></div>
+            </div>
+            <div class="notes-editor">
+              <input id="noteTitleInput" class="notes-input" type="text" placeholder="Note title">
+              <textarea id="notesBox" class="notes-textarea" placeholder="Write your note..."></textarea>
+              <div class="row">
+                <button id="noteNewBtn" class="btn" type="button">New</button>
+                <button id="noteSaveBtn" class="btn primary" type="button">Save</button>
+                <button id="noteDeleteBtn" class="btn" type="button">Delete</button>
+                <button id="noteExportBtn" class="btn" type="button">Export</button>
+                <button id="noteImportBtn" class="btn" type="button">Import</button>
+                <input id="noteImportFile" type="file" accept=".json" style="display:none;">
+              </div>
+              <div id="notesStatus" class="notes-status">Ready</div>
+            </div>
+          </div>
         </article>
 
         <article class="mini-tool">
@@ -621,7 +777,7 @@
 
     <section id="games" class="glass reveal">
       <h2>Games Lounge</h2>
-      <p class="muted">Seven games included. Use these for short breaks.</p>
+      <p class="muted">Nine games included with a cleaner arcade UI.</p>
 
       <div class="game-tabs">
         <button class="tab active" data-game="flappy" type="button">Flappy Bird</button>
@@ -631,6 +787,8 @@
         <button class="tab" data-game="whack" type="button">Whack-a-Mole</button>
         <button class="tab" data-game="connect4" type="button">Connect Four AI</button>
         <button class="tab" data-game="pong" type="button">Pong vs AI</button>
+        <button class="tab" data-game="memorymatch" type="button">Memory Match</button>
+        <button class="tab" data-game="shooter" type="button">Space Shooter</button>
       </div>
 
       <div id="flappy" class="game-panel active">
@@ -715,12 +873,31 @@
 
       <div id="pong" class="game-panel">
         <p class="muted">Use <b>W/S</b> to move. AI paddle adapts to ball speed.</p>
-        <canvas id="pongCanvas" width="560" height="300" style="width:100%;max-width:560px;aspect-ratio:560 / 300;height:auto;border:1px solid var(--glass-border);border-radius:12px;background:rgba(8,12,22,0.5);display:block;"></canvas>
+        <canvas id="pongCanvas" class="arcade-canvas" width="560" height="300"></canvas>
         <div class="row">
           <button id="pongStart" class="btn primary" type="button">Start</button>
           <button id="pongReset" class="btn" type="button">Reset</button>
         </div>
         <p id="pongMsg" class="muted">You: 0 | AI: 0</p>
+      </div>
+
+      <div id="memorymatch" class="game-panel">
+        <p class="muted">Flip cards and match all pairs in minimum moves.</p>
+        <div id="memoryMatchGrid" class="memory-grid"></div>
+        <div class="row">
+          <button id="memoryMatchReset" class="btn" type="button">New Board</button>
+        </div>
+        <p id="memoryMatchMsg" class="muted">Moves: 0 | Matched: 0/8</p>
+      </div>
+
+      <div id="shooter" class="game-panel">
+        <p class="muted">Use <b>A/D</b> or arrows to move, <b>Space</b> to shoot.</p>
+        <canvas id="shooterCanvas" class="arcade-canvas" width="560" height="300"></canvas>
+        <div class="row">
+          <button id="shooterStart" class="btn primary" type="button">Start</button>
+          <button id="shooterReset" class="btn" type="button">Reset</button>
+        </div>
+        <p id="shooterMsg" class="muted">Score: 0 | Lives: 3</p>
       </div>
     </section>
 
@@ -815,8 +992,204 @@
     });
 
     const notesBox = document.getElementById("notesBox");
-    notesBox.value = localStorage.getItem("soham_notes") || "";
-    notesBox.addEventListener("input", () => localStorage.setItem("soham_notes", notesBox.value));
+    const notesList = document.getElementById("notesList");
+    const noteSearchInput = document.getElementById("noteSearchInput");
+    const noteTitleInput = document.getElementById("noteTitleInput");
+    const notesStatus = document.getElementById("notesStatus");
+    const noteNewButton = document.getElementById("noteNewBtn");
+    const noteSaveButton = document.getElementById("noteSaveBtn");
+    const noteDeleteButton = document.getElementById("noteDeleteBtn");
+    const noteExportButton = document.getElementById("noteExportBtn");
+    const noteImportButton = document.getElementById("noteImportBtn");
+    const noteImportFileInput = document.getElementById("noteImportFile");
+
+    function createNoteObject(noteTitle, noteBody) {
+      return {
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+        title: noteTitle || "Untitled",
+        content: noteBody || "",
+        updatedAt: new Date().toISOString()
+      };
+    }
+
+    function getStoredNotesState() {
+      const rawNotesState = localStorage.getItem("soham_notes_state");
+      if (rawNotesState) {
+        try {
+          const parsedNotesState = JSON.parse(rawNotesState);
+          if (Array.isArray(parsedNotesState.notes) && parsedNotesState.notes.length) {
+            return parsedNotesState;
+          }
+        } catch (error) {}
+      }
+
+      const legacySingleNote = localStorage.getItem("soham_notes") || "";
+      return {
+        activeNoteId: "",
+        notes: [createNoteObject("Quick Notes", legacySingleNote)]
+      };
+    }
+
+    let notesState = getStoredNotesState();
+    if (!notesState.notes.length) {
+      notesState.notes = [createNoteObject("Quick Notes", "")];
+    }
+    if (!notesState.activeNoteId || !notesState.notes.some((note) => note.id === notesState.activeNoteId)) {
+      notesState.activeNoteId = notesState.notes[0].id;
+    }
+
+    let notesAutosaveTimer = null;
+
+    function persistNotesState(statusLabel) {
+      localStorage.setItem("soham_notes_state", JSON.stringify(notesState));
+      if (statusLabel) {
+        notesStatus.textContent = statusLabel + " - " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      }
+    }
+
+    function getActiveNote() {
+      return notesState.notes.find((note) => note.id === notesState.activeNoteId) || notesState.notes[0];
+    }
+
+    function renderNotesList() {
+      const searchQuery = noteSearchInput.value.trim().toLowerCase();
+      notesList.innerHTML = "";
+      const visibleNotes = notesState.notes.filter((note) => {
+        if (!searchQuery) return true;
+        return note.title.toLowerCase().includes(searchQuery) || note.content.toLowerCase().includes(searchQuery);
+      });
+
+      visibleNotes
+        .sort((firstNote, secondNote) => new Date(secondNote.updatedAt) - new Date(firstNote.updatedAt))
+        .forEach((note) => {
+          const noteButton = document.createElement("button");
+          noteButton.type = "button";
+          noteButton.className = "note-item";
+          if (note.id === notesState.activeNoteId) noteButton.classList.add("active");
+          const compactPreview = (note.content || "").replace(/\s+/g, " ").slice(0, 40);
+          noteButton.textContent = note.title + (compactPreview ? " - " + compactPreview : "");
+          noteButton.addEventListener("click", () => {
+            notesState.activeNoteId = note.id;
+            renderNotesEditor();
+            renderNotesList();
+          });
+          notesList.appendChild(noteButton);
+        });
+
+      if (!visibleNotes.length) {
+        const emptyLabel = document.createElement("div");
+        emptyLabel.className = "notes-status";
+        emptyLabel.textContent = "No matching notes.";
+        notesList.appendChild(emptyLabel);
+      }
+    }
+
+    function renderNotesEditor() {
+      const activeNote = getActiveNote();
+      noteTitleInput.value = activeNote.title;
+      notesBox.value = activeNote.content;
+    }
+
+    function saveEditorToActiveNote(statusLabel) {
+      const activeNote = getActiveNote();
+      if (!activeNote) return;
+      activeNote.title = (noteTitleInput.value || "Untitled").trim() || "Untitled";
+      activeNote.content = notesBox.value;
+      activeNote.updatedAt = new Date().toISOString();
+      persistNotesState(statusLabel || "Saved");
+      renderNotesList();
+    }
+
+    function queueNotesAutosave() {
+      clearTimeout(notesAutosaveTimer);
+      notesStatus.textContent = "Editing...";
+      notesAutosaveTimer = setTimeout(() => {
+        saveEditorToActiveNote("Autosaved");
+      }, 450);
+    }
+
+    noteTitleInput.addEventListener("input", queueNotesAutosave);
+    notesBox.addEventListener("input", queueNotesAutosave);
+    noteSearchInput.addEventListener("input", renderNotesList);
+
+    noteNewButton.addEventListener("click", () => {
+      const newNote = createNoteObject("New Note", "");
+      notesState.notes.unshift(newNote);
+      notesState.activeNoteId = newNote.id;
+      persistNotesState("Created");
+      renderNotesEditor();
+      renderNotesList();
+    });
+
+    noteSaveButton.addEventListener("click", () => {
+      saveEditorToActiveNote("Saved");
+    });
+
+    noteDeleteButton.addEventListener("click", () => {
+      if (notesState.notes.length === 1) {
+        const onlyNote = notesState.notes[0];
+        onlyNote.title = "Quick Notes";
+        onlyNote.content = "";
+        onlyNote.updatedAt = new Date().toISOString();
+        renderNotesEditor();
+        persistNotesState("Cleared");
+        renderNotesList();
+        return;
+      }
+      notesState.notes = notesState.notes.filter((note) => note.id !== notesState.activeNoteId);
+      notesState.activeNoteId = notesState.notes[0].id;
+      persistNotesState("Deleted");
+      renderNotesEditor();
+      renderNotesList();
+    });
+
+    noteExportButton.addEventListener("click", () => {
+      const exportBlob = new Blob([JSON.stringify(notesState, null, 2)], { type: "application/json" });
+      const downloadUrl = URL.createObjectURL(exportBlob);
+      const exportLink = document.createElement("a");
+      exportLink.href = downloadUrl;
+      exportLink.download = "soham-notes.json";
+      exportLink.click();
+      URL.revokeObjectURL(downloadUrl);
+      notesStatus.textContent = "Exported notes.";
+    });
+
+    noteImportButton.addEventListener("click", () => {
+      noteImportFileInput.click();
+    });
+
+    noteImportFileInput.addEventListener("change", async () => {
+      const selectedFile = noteImportFileInput.files && noteImportFileInput.files[0];
+      if (!selectedFile) return;
+      try {
+        const importedContent = await selectedFile.text();
+        const parsed = JSON.parse(importedContent);
+        if (!Array.isArray(parsed.notes) || !parsed.notes.length) {
+          notesStatus.textContent = "Invalid import file.";
+          return;
+        }
+        const normalizedNotes = parsed.notes.map((note) => ({
+          id: note.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())),
+          title: (note.title || "Imported note").toString(),
+          content: (note.content || "").toString(),
+          updatedAt: note.updatedAt || new Date().toISOString()
+        }));
+        notesState = {
+          notes: normalizedNotes,
+          activeNoteId: normalizedNotes[0].id
+        };
+        persistNotesState("Imported");
+        renderNotesEditor();
+        renderNotesList();
+      } catch (error) {
+        notesStatus.textContent = "Import failed.";
+      }
+      noteImportFileInput.value = "";
+    });
+
+    renderNotesEditor();
+    renderNotesList();
+    notesStatus.textContent = "Ready";
 
     const shortenInput = document.getElementById("longUrl");
     const shortenCreateButton = document.getElementById("makeShort");
@@ -1432,53 +1805,103 @@
     let whackScore = 0;
     let whackTimeLeft = 20;
     let whackActiveIndex = -1;
+    let whackLastIndex = -1;
+    let whackMisses = 0;
     let whackRoundTimer = null;
     let whackMoleTimer = null;
+    let whackRoundRunning = false;
+    const whackCells = [];
 
-    function renderWhackGrid() {
+    function updateWhackHud(statusText) {
+      const statusSuffix = statusText ? " | " + statusText : "";
+      whackMessage.textContent = "Score: " + whackScore + " | Miss: " + whackMisses + " | Time: " + whackTimeLeft + statusSuffix;
+    }
+
+    function paintWhackCells() {
+      whackCells.forEach((cell, holeIndex) => {
+        const isActive = holeIndex === whackActiveIndex;
+        cell.classList.toggle("active", isActive);
+        cell.textContent = isActive ? "🐹" : "";
+      });
+    }
+
+    function pickNextWhackIndex() {
+      let nextIndex = Math.floor(Math.random() * 9);
+      if (nextIndex === whackLastIndex) {
+        nextIndex = (nextIndex + 1 + Math.floor(Math.random() * 8)) % 9;
+      }
+      whackLastIndex = nextIndex;
+      return nextIndex;
+    }
+
+    function scheduleNextMole() {
+      clearTimeout(whackMoleTimer);
+      if (!whackRoundRunning) return;
+      const appearanceDelayMs = 280 + Math.floor(Math.random() * 260);
+      whackMoleTimer = setTimeout(() => {
+        if (!whackRoundRunning) return;
+        if (whackActiveIndex >= 0) {
+          whackMisses += 1;
+        }
+        whackActiveIndex = pickNextWhackIndex();
+        paintWhackCells();
+        updateWhackHud();
+        scheduleNextMole();
+      }, appearanceDelayMs);
+    }
+
+    function stopWhackRound(statusText) {
+      clearInterval(whackRoundTimer);
+      clearTimeout(whackMoleTimer);
+      whackRoundTimer = null;
+      whackMoleTimer = null;
+      whackRoundRunning = false;
+      whackActiveIndex = -1;
+      paintWhackCells();
+      updateWhackHud(statusText || "Round over");
+    }
+
+    function startWhackRound() {
+      stopWhackRound("Starting...");
+      whackScore = 0;
+      whackMisses = 0;
+      whackTimeLeft = 20;
+      whackRoundRunning = true;
+      updateWhackHud("Go");
+      scheduleNextMole();
+      whackRoundTimer = setInterval(() => {
+        whackTimeLeft -= 1;
+        updateWhackHud();
+        if (whackTimeLeft <= 0) {
+          stopWhackRound("Round over");
+        }
+      }, 1000);
+    }
+
+    function buildWhackGrid() {
       whackGrid.innerHTML = "";
+      whackCells.length = 0;
       for (let holeIndex = 0; holeIndex < 9; holeIndex += 1) {
         const holeButton = document.createElement("button");
         holeButton.type = "button";
         holeButton.className = "guess-cell whack-cell";
-        if (holeIndex === whackActiveIndex) holeButton.classList.add("active");
-        holeButton.textContent = holeIndex === whackActiveIndex ? "🐹" : "";
         holeButton.addEventListener("click", () => {
+          if (!whackRoundRunning) return;
           if (holeIndex === whackActiveIndex) {
             whackScore += 1;
             whackActiveIndex = -1;
-            renderWhackGrid();
-            whackMessage.textContent = "Score: " + whackScore + " | Time: " + whackTimeLeft;
+            paintWhackCells();
+            updateWhackHud("Nice hit");
+          } else {
+            whackMisses += 1;
+            updateWhackHud("Miss");
           }
         });
+        whackCells.push(holeButton);
         whackGrid.appendChild(holeButton);
       }
-    }
-
-    function stopWhackRound() {
-      clearInterval(whackRoundTimer);
-      clearInterval(whackMoleTimer);
-      whackRoundTimer = null;
-      whackMoleTimer = null;
-      whackActiveIndex = -1;
-      renderWhackGrid();
-      whackMessage.textContent = "Round over. Score: " + whackScore;
-    }
-
-    function startWhackRound() {
-      stopWhackRound();
-      whackScore = 0;
-      whackTimeLeft = 20;
-      whackMessage.textContent = "Score: 0 | Time: 20";
-      whackMoleTimer = setInterval(() => {
-        whackActiveIndex = Math.floor(Math.random() * 9);
-        renderWhackGrid();
-      }, 520);
-      whackRoundTimer = setInterval(() => {
-        whackTimeLeft -= 1;
-        whackMessage.textContent = "Score: " + whackScore + " | Time: " + whackTimeLeft;
-        if (whackTimeLeft <= 0) stopWhackRound();
-      }, 1000);
+      paintWhackCells();
+      updateWhackHud("Ready");
     }
     document.getElementById("whackStart").addEventListener("click", startWhackRound);
 
@@ -1770,17 +2193,245 @@
       resetPongGame();
     });
 
-    resetSnakeGame();
-    reset2048();
-    resetTicGame();
-    renderWhackGrid();
-    resetConnect4Game();
-    resetPongGame();
+    const memoryMatchGrid = document.getElementById("memoryMatchGrid");
+    const memoryMatchMessage = document.getElementById("memoryMatchMsg");
+    const memoryIcons = ["🚀", "🎮", "⚡", "🎯", "🔥", "🧠", "💎", "🛸"];
+    let memoryCards = [];
+    let memoryOpenIndexes = [];
+    let memoryMatchedCount = 0;
+    let memoryMoves = 0;
+    let memoryBusy = false;
+
+    function shuffleArray(values) {
+      const copiedValues = [...values];
+      for (let index = copiedValues.length - 1; index > 0; index -= 1) {
+        const randomIndex = Math.floor(Math.random() * (index + 1));
+        [copiedValues[index], copiedValues[randomIndex]] = [copiedValues[randomIndex], copiedValues[index]];
+      }
+      return copiedValues;
+    }
+
+    function renderMemoryMatch() {
+      memoryMatchGrid.innerHTML = "";
+      memoryCards.forEach((card, cardIndex) => {
+        const cardButton = document.createElement("button");
+        cardButton.type = "button";
+        cardButton.className = "memory-card";
+        if (card.revealed) cardButton.classList.add("revealed");
+        if (card.matched) cardButton.classList.add("matched");
+        cardButton.textContent = card.revealed || card.matched ? card.icon : "•";
+        cardButton.addEventListener("click", () => {
+          if (memoryBusy || card.matched || card.revealed) return;
+          card.revealed = true;
+          memoryOpenIndexes.push(cardIndex);
+          renderMemoryMatch();
+          if (memoryOpenIndexes.length === 2) {
+            memoryMoves += 1;
+            const [firstIndex, secondIndex] = memoryOpenIndexes;
+            const firstCard = memoryCards[firstIndex];
+            const secondCard = memoryCards[secondIndex];
+            if (firstCard.icon === secondCard.icon) {
+              firstCard.matched = true;
+              secondCard.matched = true;
+              memoryMatchedCount += 1;
+              memoryOpenIndexes = [];
+              renderMemoryMatch();
+              memoryMatchMessage.textContent = "Moves: " + memoryMoves + " | Matched: " + memoryMatchedCount + "/8";
+              if (memoryMatchedCount === 8) {
+                memoryMatchMessage.textContent += " | Completed!";
+              }
+            } else {
+              memoryBusy = true;
+              setTimeout(() => {
+                firstCard.revealed = false;
+                secondCard.revealed = false;
+                memoryOpenIndexes = [];
+                memoryBusy = false;
+                renderMemoryMatch();
+              }, 520);
+            }
+          }
+          memoryMatchMessage.textContent = "Moves: " + memoryMoves + " | Matched: " + memoryMatchedCount + "/8";
+        });
+        memoryMatchGrid.appendChild(cardButton);
+      });
+    }
+
+    function resetMemoryMatch() {
+      const deckIcons = shuffleArray([...memoryIcons, ...memoryIcons]);
+      memoryCards = deckIcons.map((icon) => ({ icon, revealed: false, matched: false }));
+      memoryOpenIndexes = [];
+      memoryMatchedCount = 0;
+      memoryMoves = 0;
+      memoryBusy = false;
+      renderMemoryMatch();
+      memoryMatchMessage.textContent = "Moves: 0 | Matched: 0/8";
+    }
+    document.getElementById("memoryMatchReset").addEventListener("click", resetMemoryMatch);
+
+    const shooterCanvas = document.getElementById("shooterCanvas");
+    const shooterContext = shooterCanvas.getContext("2d");
+    const shooterMessage = document.getElementById("shooterMsg");
+    const shooterState = {
+      running: false,
+      leftPressed: false,
+      rightPressed: false,
+      playerX: 280,
+      lives: 3,
+      score: 0,
+      bullets: [],
+      enemies: [],
+      enemyDirection: 1,
+      lastEnemyStepAt: 0,
+      lastBulletAt: 0
+    };
+
+    function resetShooterEnemies() {
+      shooterState.enemies = [];
+      for (let rowIndex = 0; rowIndex < 3; rowIndex += 1) {
+        for (let colIndex = 0; colIndex < 8; colIndex += 1) {
+          shooterState.enemies.push({
+            x: 70 + colIndex * 55,
+            y: 40 + rowIndex * 34,
+            alive: true
+          });
+        }
+      }
+    }
+
+    function resetShooterGame() {
+      shooterState.playerX = shooterCanvas.width / 2;
+      shooterState.lives = 3;
+      shooterState.score = 0;
+      shooterState.bullets = [];
+      shooterState.enemyDirection = 1;
+      shooterState.lastEnemyStepAt = 0;
+      shooterState.lastBulletAt = 0;
+      resetShooterEnemies();
+      drawShooterFrame();
+      shooterMessage.textContent = "Score: 0 | Lives: 3";
+    }
+
+    function drawShooterFrame() {
+      shooterContext.fillStyle = "#050a16";
+      shooterContext.fillRect(0, 0, shooterCanvas.width, shooterCanvas.height);
+      shooterContext.fillStyle = "rgba(255,255,255,0.12)";
+      for (let starIndex = 0; starIndex < 40; starIndex += 1) {
+        shooterContext.fillRect((starIndex * 73) % shooterCanvas.width, (starIndex * 57) % shooterCanvas.height, 2, 2);
+      }
+
+      shooterContext.fillStyle = "#67e8f9";
+      shooterContext.beginPath();
+      shooterContext.moveTo(shooterState.playerX, shooterCanvas.height - 34);
+      shooterContext.lineTo(shooterState.playerX - 12, shooterCanvas.height - 10);
+      shooterContext.lineTo(shooterState.playerX + 12, shooterCanvas.height - 10);
+      shooterContext.closePath();
+      shooterContext.fill();
+
+      shooterContext.fillStyle = "#f8fafc";
+      shooterState.bullets.forEach((bullet) => {
+        shooterContext.fillRect(bullet.x - 2, bullet.y - 8, 4, 10);
+      });
+
+      shooterState.enemies.forEach((enemy) => {
+        if (!enemy.alive) return;
+        shooterContext.fillStyle = "#fbbf24";
+        shooterContext.beginPath();
+        shooterContext.arc(enemy.x, enemy.y, 10, 0, Math.PI * 2);
+        shooterContext.fill();
+        shooterContext.fillStyle = "#1f2937";
+        shooterContext.fillRect(enemy.x - 6, enemy.y + 8, 12, 4);
+      });
+    }
+
+    function shootPlayerBullet(nowTime) {
+      if (nowTime - shooterState.lastBulletAt < 190) return;
+      shooterState.bullets.push({ x: shooterState.playerX, y: shooterCanvas.height - 36 });
+      shooterState.lastBulletAt = nowTime;
+    }
+
+    function updateShooter(nowTime) {
+      if (!shooterState.running) return;
+
+      if (shooterState.leftPressed) shooterState.playerX -= 4.2;
+      if (shooterState.rightPressed) shooterState.playerX += 4.2;
+      shooterState.playerX = Math.max(20, Math.min(shooterCanvas.width - 20, shooterState.playerX));
+
+      shooterState.bullets.forEach((bullet) => {
+        bullet.y -= 5.8;
+      });
+      shooterState.bullets = shooterState.bullets.filter((bullet) => bullet.y > -20);
+
+      if (!shooterState.lastEnemyStepAt || nowTime - shooterState.lastEnemyStepAt > 380) {
+        shooterState.lastEnemyStepAt = nowTime;
+        let hitEdge = false;
+        shooterState.enemies.forEach((enemy) => {
+          if (!enemy.alive) return;
+          enemy.x += shooterState.enemyDirection * 13;
+          if (enemy.x > shooterCanvas.width - 20 || enemy.x < 20) hitEdge = true;
+        });
+        if (hitEdge) {
+          shooterState.enemyDirection *= -1;
+          shooterState.enemies.forEach((enemy) => {
+            if (!enemy.alive) return;
+            enemy.y += 15;
+          });
+        }
+      }
+
+      shooterState.bullets.forEach((bullet) => {
+        shooterState.enemies.forEach((enemy) => {
+          if (!enemy.alive) return;
+          const hit = Math.abs(bullet.x - enemy.x) < 12 && Math.abs(bullet.y - enemy.y) < 12;
+          if (hit) {
+            enemy.alive = false;
+            bullet.y = -100;
+            shooterState.score += 10;
+          }
+        });
+      });
+
+      const reachedBottom = shooterState.enemies.some((enemy) => enemy.alive && enemy.y > shooterCanvas.height - 45);
+      if (reachedBottom) {
+        shooterState.lives -= 1;
+        if (shooterState.lives <= 0) {
+          shooterState.running = false;
+          shooterMessage.textContent = "Score: " + shooterState.score + " | Lives: 0 | Game Over";
+        } else {
+          resetShooterEnemies();
+          shooterState.enemyDirection = 1;
+        }
+      }
+
+      const aliveEnemies = shooterState.enemies.filter((enemy) => enemy.alive).length;
+      if (!aliveEnemies) {
+        resetShooterEnemies();
+        shooterState.enemyDirection = 1;
+      }
+
+      shooterMessage.textContent = "Score: " + shooterState.score + " | Lives: " + shooterState.lives;
+      drawShooterFrame();
+      requestAnimationFrame(updateShooter);
+    }
+
+    document.getElementById("shooterStart").addEventListener("click", () => {
+      if (shooterState.running) return;
+      shooterState.running = true;
+      requestAnimationFrame(updateShooter);
+    });
+    document.getElementById("shooterReset").addEventListener("click", () => {
+      shooterState.running = false;
+      resetShooterGame();
+    });
 
     resetSnakeGame();
     reset2048();
     resetTicGame();
-    renderWhackGrid();
+    buildWhackGrid();
+    resetConnect4Game();
+    resetPongGame();
+    resetMemoryMatch();
+    resetShooterGame();
 
     const flappyCanvas = document.getElementById("flappyCanvas");
     const flappyContext = flappyCanvas.getContext("2d");
@@ -2158,15 +2809,27 @@
         if (isPongDown) pongState.moveDown = true;
       }
 
-      if (isMoveUp || isMoveDown || isMoveLeft || isMoveRight || isPongUp || isPongDown) {
+      const isShooterLeft = event.code === "ArrowLeft" || normalizedKey === "a";
+      const isShooterRight = event.code === "ArrowRight" || normalizedKey === "d";
+      if (activeGamePanelId === "shooter") {
+        if (isShooterLeft) shooterState.leftPressed = true;
+        if (isShooterRight) shooterState.rightPressed = true;
+      }
+
+      if (isMoveUp || isMoveDown || isMoveLeft || isMoveRight || isPongUp || isPongDown || isShooterLeft || isShooterRight) {
         event.preventDefault();
       }
 
       if (event.code === "Space") {
         event.preventDefault();
-        triggerFlappyJump();
+        if (activeGamePanelId === "flappy") {
+          triggerFlappyJump();
+        }
+        if (activeGamePanelId === "shooter" && shooterState.running) {
+          shootPlayerBullet(performance.now());
+        }
       }
-      if (event.key.toLowerCase() === "p" && flappyGame.isRunning && !flappyGame.isGameOver) {
+      if (event.key.toLowerCase() === "p" && activeGamePanelId === "flappy" && flappyGame.isRunning && !flappyGame.isGameOver) {
         flappyGame.isPaused = !flappyGame.isPaused;
         updateFlappyHud();
       }
@@ -2176,9 +2839,12 @@
       const normalizedKey = event.key.toLowerCase();
       if (normalizedKey === "w") pongState.moveUp = false;
       if (normalizedKey === "s") pongState.moveDown = false;
+      if (normalizedKey === "a" || event.code === "ArrowLeft") shooterState.leftPressed = false;
+      if (normalizedKey === "d" || event.code === "ArrowRight") shooterState.rightPressed = false;
     });
 
     flappyCanvas.addEventListener("click", () => {
+      if (getActiveGamePanelId() !== "flappy") return;
       triggerFlappyJump();
     });
 

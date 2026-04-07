@@ -295,14 +295,53 @@
     .game-panel { display: none; }
     .game-panel.active { display: block; }
 
+    .flappy-shell {
+      width: 100%;
+      max-width: 560px;
+      border-radius: 14px;
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.06);
+      padding: 12px;
+    }
+
+    .flappy-hud {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .flappy-pill {
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 8px;
+      text-align: center;
+      font-size: 0.84rem;
+    }
+
+    .flappy-pill b {
+      display: block;
+      font-size: 1rem;
+      margin-bottom: 1px;
+    }
+
     #flappyCanvas {
       width: 100%;
-      max-width: 500px;
-      height: 280px;
+      max-width: 536px;
+      height: 300px;
       border-radius: 12px;
       border: 1px solid var(--glass-border);
       background: linear-gradient(180deg, #2f6fdd, #88d6ff);
       display: block;
+    }
+
+    .flappy-actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
     }
 
     .guess-grid {
@@ -480,9 +519,21 @@
       </div>
 
       <div id="flappy" class="game-panel active">
-        <p class="muted">Press <b>Space</b> to jump. Avoid pipes.</p>
-        <canvas id="flappyCanvas" width="500" height="280"></canvas>
-        <p><b>Score:</b> <span id="flappyScore">0</span> | <b>Best:</b> <span id="flappyBest">0</span></p>
+        <p class="muted">Press <b>Space</b> or tap canvas. Clear pipes and survive as speed increases.</p>
+        <div class="flappy-shell">
+          <div class="flappy-hud">
+            <div class="flappy-pill"><b id="flappyScore">0</b>Score</div>
+            <div class="flappy-pill"><b id="flappyBest">0</b>Best</div>
+            <div class="flappy-pill"><b id="flappyLevel">1</b>Level</div>
+            <div class="flappy-pill"><b id="flappyState">Ready</b>Status</div>
+          </div>
+          <canvas id="flappyCanvas" width="536" height="300"></canvas>
+          <div class="flappy-actions">
+            <button id="flappyStartBtn" class="btn primary" type="button">Start</button>
+            <button id="flappyPauseBtn" class="btn" type="button">Pause</button>
+            <button id="flappyRestartBtn" class="btn" type="button">Restart</button>
+          </div>
+        </div>
       </div>
 
       <div id="guess" class="game-panel">
@@ -746,113 +797,312 @@
       }, 1200);
     });
 
-    const canvas = document.getElementById("flappyCanvas");
-    const ctx = canvas.getContext("2d");
-    const scoreEl = document.getElementById("flappyScore");
-    const bestEl = document.getElementById("flappyBest");
-    let best = Number(localStorage.getItem("flappy_best") || 0);
-    bestEl.textContent = String(best);
+    const flappyCanvas = document.getElementById("flappyCanvas");
+    const flappyContext = flappyCanvas.getContext("2d");
+    const flappyScoreElement = document.getElementById("flappyScore");
+    const flappyBestElement = document.getElementById("flappyBest");
+    const flappyLevelElement = document.getElementById("flappyLevel");
+    const flappyStateElement = document.getElementById("flappyState");
+    const flappyStartButton = document.getElementById("flappyStartBtn");
+    const flappyPauseButton = document.getElementById("flappyPauseBtn");
+    const flappyRestartButton = document.getElementById("flappyRestartBtn");
 
-    let birdY = 120;
-    let birdVel = 0;
-    let score = 0;
-    let pipes = [];
-    let gameOver = false;
-    const gravity = 0.32;
-    const jump = -5.8;
-    const pipeGap = 95;
-    const pipeWidth = 48;
+    const flappyGame = {
+      birdX: 120,
+      birdY: 150,
+      birdVelocityY: 0,
+      birdRadius: 14,
+      gravityPerFrame: 0.32,
+      jumpVelocity: -6.2,
+      pipeWidth: 64,
+      basePipeGap: 122,
+      pipeSpeed: 2.25,
+      score: 0,
+      level: 1,
+      isRunning: false,
+      isPaused: false,
+      isGameOver: false,
+      animationFrameId: null,
+      lastRenderTime: 0,
+      backgroundOffset: 0,
+      pipes: []
+    };
 
-    function resetFlappy() {
-      birdY = 120;
-      birdVel = 0;
-      score = 0;
-      pipes = [{ x: 520, top: 55 }, { x: 760, top: 120 }];
-      gameOver = false;
-      scoreEl.textContent = "0";
+    let flappyBestScore = Number(localStorage.getItem("flappy_best") || 0);
+    flappyBestElement.textContent = String(flappyBestScore);
+
+    function updateFlappyHud() {
+      flappyScoreElement.textContent = String(flappyGame.score);
+      flappyLevelElement.textContent = String(flappyGame.level);
+      if (flappyGame.isGameOver) {
+        flappyStateElement.textContent = "Game Over";
+      } else if (flappyGame.isPaused) {
+        flappyStateElement.textContent = "Paused";
+      } else if (flappyGame.isRunning) {
+        flappyStateElement.textContent = "Running";
+      } else {
+        flappyStateElement.textContent = "Ready";
+      }
     }
 
-    function drawBird() {
-      ctx.beginPath();
-      ctx.fillStyle = "#fef08a";
-      ctx.arc(90, birdY, 12, 0, Math.PI * 2);
-      ctx.fill();
+    function createFlappyPipe(spawnX) {
+      const minTopHeight = 34;
+      const maxTopHeight = flappyCanvas.height - flappyGame.basePipeGap - 34;
+      const topHeight = minTopHeight + Math.random() * (maxTopHeight - minTopHeight);
+      return {
+        x: spawnX,
+        topHeight: topHeight,
+        hasBeenScored: false
+      };
     }
 
-    function drawPipe(pipe) {
-      ctx.fillStyle = "#14532d";
-      ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
-      ctx.fillRect(pipe.x, pipe.top + pipeGap, pipeWidth, canvas.height - (pipe.top + pipeGap));
+    function resetFlappyGameState() {
+      flappyGame.birdY = 150;
+      flappyGame.birdVelocityY = 0;
+      flappyGame.pipeSpeed = 2.25;
+      flappyGame.basePipeGap = 122;
+      flappyGame.score = 0;
+      flappyGame.level = 1;
+      flappyGame.isGameOver = false;
+      flappyGame.isPaused = false;
+      flappyGame.pipes = [
+        createFlappyPipe(flappyCanvas.width + 60),
+        createFlappyPipe(flappyCanvas.width + 320)
+      ];
+      flappyGame.backgroundOffset = 0;
+      updateFlappyHud();
     }
 
-    function tickFlappy() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      birdVel += gravity;
-      birdY += birdVel;
-      if (birdY < 0) birdY = 0;
-      if (birdY > canvas.height) gameOver = true;
+    function drawFlappyBackground() {
+      const canvasWidth = flappyCanvas.width;
+      const canvasHeight = flappyCanvas.height;
 
-      pipes.forEach((pipe) => {
-        pipe.x -= 2.1;
-        drawPipe(pipe);
+      const skyGradient = flappyContext.createLinearGradient(0, 0, 0, canvasHeight);
+      skyGradient.addColorStop(0, "#56adff");
+      skyGradient.addColorStop(1, "#b8ecff");
+      flappyContext.fillStyle = skyGradient;
+      flappyContext.fillRect(0, 0, canvasWidth, canvasHeight);
 
-        const hitX = 90 + 12 > pipe.x && 90 - 12 < pipe.x + pipeWidth;
-        const hitY = birdY - 12 < pipe.top || birdY + 12 > pipe.top + pipeGap;
-        if (hitX && hitY) gameOver = true;
+      const cloudShift = flappyGame.backgroundOffset % (canvasWidth + 240);
+      flappyContext.fillStyle = "rgba(255, 255, 255, 0.55)";
+      for (let cloudIndex = 0; cloudIndex < 4; cloudIndex += 1) {
+        const cloudX = canvasWidth - cloudShift + cloudIndex * 170 - 100;
+        const cloudY = 38 + cloudIndex * 28;
+        flappyContext.beginPath();
+        flappyContext.arc(cloudX, cloudY, 20, 0, Math.PI * 2);
+        flappyContext.arc(cloudX + 26, cloudY - 6, 16, 0, Math.PI * 2);
+        flappyContext.arc(cloudX + 48, cloudY + 2, 18, 0, Math.PI * 2);
+        flappyContext.fill();
+      }
 
-        if (!pipe.passed && pipe.x + pipeWidth < 90) {
-          pipe.passed = true;
-          score += 1;
-          scoreEl.textContent = String(score);
+      flappyContext.fillStyle = "#7ad66f";
+      flappyContext.fillRect(0, canvasHeight - 24, canvasWidth, 24);
+      flappyContext.fillStyle = "#53b84a";
+      flappyContext.fillRect(0, canvasHeight - 18, canvasWidth, 18);
+    }
+
+    function drawFlappyBird() {
+      const tiltAngle = Math.max(-0.5, Math.min(0.55, flappyGame.birdVelocityY / 9));
+
+      flappyContext.save();
+      flappyContext.translate(flappyGame.birdX, flappyGame.birdY);
+      flappyContext.rotate(tiltAngle);
+
+      flappyContext.beginPath();
+      flappyContext.fillStyle = "#ffe08a";
+      flappyContext.arc(0, 0, flappyGame.birdRadius, 0, Math.PI * 2);
+      flappyContext.fill();
+
+      flappyContext.beginPath();
+      flappyContext.fillStyle = "#ffd166";
+      flappyContext.arc(-3, 1, flappyGame.birdRadius - 5, 0, Math.PI * 2);
+      flappyContext.fill();
+
+      flappyContext.beginPath();
+      flappyContext.fillStyle = "#ff7b54";
+      flappyContext.moveTo(10, -2);
+      flappyContext.lineTo(22, 2);
+      flappyContext.lineTo(10, 7);
+      flappyContext.closePath();
+      flappyContext.fill();
+
+      flappyContext.beginPath();
+      flappyContext.fillStyle = "#111827";
+      flappyContext.arc(3, -4, 2.4, 0, Math.PI * 2);
+      flappyContext.fill();
+
+      flappyContext.restore();
+    }
+
+    function drawFlappyPipe(pipe) {
+      const gap = flappyGame.basePipeGap;
+      const bottomPipeY = pipe.topHeight + gap;
+      const roundedRadius = 8;
+
+      const pipeGradient = flappyContext.createLinearGradient(pipe.x, 0, pipe.x + flappyGame.pipeWidth, 0);
+      pipeGradient.addColorStop(0, "#2f8f46");
+      pipeGradient.addColorStop(1, "#14532d");
+      flappyContext.fillStyle = pipeGradient;
+
+      flappyContext.fillRect(pipe.x, 0, flappyGame.pipeWidth, pipe.topHeight);
+      flappyContext.fillRect(pipe.x, bottomPipeY, flappyGame.pipeWidth, flappyCanvas.height - bottomPipeY);
+
+      flappyContext.fillStyle = "#34a853";
+      flappyContext.fillRect(pipe.x - roundedRadius, pipe.topHeight - 14, flappyGame.pipeWidth + roundedRadius * 2, 14);
+      flappyContext.fillRect(pipe.x - roundedRadius, bottomPipeY, flappyGame.pipeWidth + roundedRadius * 2, 14);
+    }
+
+    function getFlappyCurrentLevel() {
+      return Math.floor(flappyGame.score / 5) + 1;
+    }
+
+    function triggerFlappyJump() {
+      if (!flappyGame.isRunning && !flappyGame.isGameOver) {
+        flappyGame.isRunning = true;
+      }
+
+      if (flappyGame.isGameOver) {
+        resetFlappyGameState();
+        flappyGame.isRunning = true;
+      }
+
+      if (flappyGame.isPaused) return;
+      flappyGame.birdVelocityY = flappyGame.jumpVelocity;
+      updateFlappyHud();
+    }
+
+    function endFlappyGame() {
+      flappyGame.isGameOver = true;
+      flappyGame.isRunning = false;
+      if (flappyGame.score > flappyBestScore) {
+        flappyBestScore = flappyGame.score;
+        localStorage.setItem("flappy_best", String(flappyBestScore));
+        flappyBestElement.textContent = String(flappyBestScore);
+      }
+      updateFlappyHud();
+    }
+
+    function renderFlappyOverlay(textLineOne, textLineTwo) {
+      flappyContext.fillStyle = "rgba(2, 6, 23, 0.45)";
+      flappyContext.fillRect(0, 0, flappyCanvas.width, flappyCanvas.height);
+      flappyContext.fillStyle = "#ffffff";
+      flappyContext.font = "bold 24px Inter, sans-serif";
+      flappyContext.textAlign = "center";
+      flappyContext.fillText(textLineOne, flappyCanvas.width / 2, flappyCanvas.height / 2 - 10);
+      flappyContext.font = "15px Inter, sans-serif";
+      flappyContext.fillText(textLineTwo, flappyCanvas.width / 2, flappyCanvas.height / 2 + 18);
+      flappyContext.textAlign = "start";
+    }
+
+    function updateFlappyWorld() {
+      if (!flappyGame.isRunning || flappyGame.isPaused || flappyGame.isGameOver) return;
+
+      flappyGame.birdVelocityY += flappyGame.gravityPerFrame;
+      flappyGame.birdY += flappyGame.birdVelocityY;
+      flappyGame.backgroundOffset += flappyGame.pipeSpeed;
+
+      if (flappyGame.birdY - flappyGame.birdRadius < 0) {
+        flappyGame.birdY = flappyGame.birdRadius;
+        flappyGame.birdVelocityY = 0;
+      }
+
+      if (flappyGame.birdY + flappyGame.birdRadius > flappyCanvas.height - 24) {
+        endFlappyGame();
+      }
+
+      flappyGame.pipes.forEach((pipe) => {
+        pipe.x -= flappyGame.pipeSpeed;
+
+        const birdLeftEdge = flappyGame.birdX - flappyGame.birdRadius;
+        const birdRightEdge = flappyGame.birdX + flappyGame.birdRadius;
+        const isBirdInsidePipeX = birdRightEdge > pipe.x && birdLeftEdge < pipe.x + flappyGame.pipeWidth;
+        const isBirdOutsideGap = flappyGame.birdY - flappyGame.birdRadius < pipe.topHeight ||
+          flappyGame.birdY + flappyGame.birdRadius > pipe.topHeight + flappyGame.basePipeGap;
+
+        if (isBirdInsidePipeX && isBirdOutsideGap) {
+          endFlappyGame();
+        }
+
+        if (!pipe.hasBeenScored && pipe.x + flappyGame.pipeWidth < flappyGame.birdX) {
+          pipe.hasBeenScored = true;
+          flappyGame.score += 1;
+          flappyGame.level = getFlappyCurrentLevel();
+          flappyGame.pipeSpeed = 2.25 + (flappyGame.level - 1) * 0.28;
+          flappyGame.basePipeGap = Math.max(96, 122 - (flappyGame.level - 1) * 3);
+          updateFlappyHud();
         }
       });
 
-      if (pipes[0].x < -pipeWidth) pipes.shift();
-      const last = pipes[pipes.length - 1];
-      if (last.x < 330) {
-        const top = 30 + Math.floor(Math.random() * 140);
-        pipes.push({ x: canvas.width + 40, top: top });
+      if (flappyGame.pipes.length && flappyGame.pipes[0].x < -flappyGame.pipeWidth - 20) {
+        flappyGame.pipes.shift();
       }
 
-      drawBird();
-      if (gameOver) {
-        if (score > best) {
-          best = score;
-          localStorage.setItem("flappy_best", String(best));
-          bestEl.textContent = String(best);
-        }
-        ctx.fillStyle = "rgba(0,0,0,0.35)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#fff";
-        ctx.font = "18px Inter, sans-serif";
-        ctx.fillText("Game Over - press Space to restart", 110, 145);
-        return;
+      const lastPipe = flappyGame.pipes[flappyGame.pipes.length - 1];
+      if (lastPipe && lastPipe.x < flappyCanvas.width - 230) {
+        flappyGame.pipes.push(createFlappyPipe(flappyCanvas.width + 80));
       }
-      requestAnimationFrame(tickFlappy);
     }
 
-    document.addEventListener("keydown", (e) => {
-      if (e.code !== "Space") return;
-      e.preventDefault();
-      if (gameOver) {
-        resetFlappy();
-        requestAnimationFrame(tickFlappy);
-      } else {
-        birdVel = jump;
+    function renderFlappyFrame(timestamp) {
+      if (!flappyGame.lastRenderTime) {
+        flappyGame.lastRenderTime = timestamp;
+      }
+      flappyGame.lastRenderTime = timestamp;
+
+      updateFlappyWorld();
+
+      drawFlappyBackground();
+      flappyGame.pipes.forEach(drawFlappyPipe);
+      drawFlappyBird();
+
+      if (!flappyGame.isRunning && !flappyGame.isGameOver) {
+        renderFlappyOverlay("Flappy Bird", "Press Start or Space to begin");
+      } else if (flappyGame.isPaused) {
+        renderFlappyOverlay("Paused", "Press Pause button or P to resume");
+      } else if (flappyGame.isGameOver) {
+        renderFlappyOverlay("Game Over", "Press Restart or Space to play again");
+      }
+
+      flappyGame.animationFrameId = requestAnimationFrame(renderFlappyFrame);
+    }
+
+    flappyStartButton.addEventListener("click", () => {
+      if (flappyGame.isGameOver) resetFlappyGameState();
+      flappyGame.isRunning = true;
+      flappyGame.isPaused = false;
+      updateFlappyHud();
+    });
+
+    flappyPauseButton.addEventListener("click", () => {
+      if (!flappyGame.isRunning || flappyGame.isGameOver) return;
+      flappyGame.isPaused = !flappyGame.isPaused;
+      updateFlappyHud();
+    });
+
+    flappyRestartButton.addEventListener("click", () => {
+      resetFlappyGameState();
+      flappyGame.isRunning = true;
+      updateFlappyHud();
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.code === "Space") {
+        event.preventDefault();
+        triggerFlappyJump();
+      }
+      if (event.key.toLowerCase() === "p" && flappyGame.isRunning && !flappyGame.isGameOver) {
+        flappyGame.isPaused = !flappyGame.isPaused;
+        updateFlappyHud();
       }
     });
 
-    canvas.addEventListener("click", () => {
-      if (gameOver) {
-        resetFlappy();
-        requestAnimationFrame(tickFlappy);
-      } else {
-        birdVel = jump;
-      }
+    flappyCanvas.addEventListener("click", () => {
+      triggerFlappyJump();
     });
 
-    resetFlappy();
-    requestAnimationFrame(tickFlappy);
+    resetFlappyGameState();
+    updateFlappyHud();
+    flappyGame.animationFrameId = requestAnimationFrame(renderFlappyFrame);
   </script>
 </body>
 </html>

@@ -816,6 +816,14 @@
       jumpVelocity: -5.9,
       maxFallVelocityPerFrame: 7.2,
       minRiseVelocityPerFrame: -7.0,
+      flapCooldownMs: 86,
+      flapCooldownRemainingMs: 0,
+      jumpBufferMs: 115,
+      jumpBufferRemainingMs: 0,
+      boundaryCoyoteMs: 90,
+      boundaryCoyoteRemainingMs: 0,
+      wasTouchingBoundary: false,
+      collisionPadding: 2,
       pipeWidth: 64,
       basePipeGap: 122,
       pipeSpeed: 2.25,
@@ -875,6 +883,10 @@
       ];
       flappyGame.backgroundOffset = 0;
       flappyGame.lastRenderTime = 0;
+      flappyGame.flapCooldownRemainingMs = 0;
+      flappyGame.jumpBufferRemainingMs = 0;
+      flappyGame.boundaryCoyoteRemainingMs = 0;
+      flappyGame.wasTouchingBoundary = false;
       updateFlappyHud();
     }
 
@@ -961,6 +973,15 @@
       return Math.floor(flappyGame.score / 5) + 1;
     }
 
+    function applyFlappyJump() {
+      const boostedJumpVelocity = flappyGame.jumpVelocity + Math.min(0, flappyGame.birdVelocityY * 0.08);
+      flappyGame.birdVelocityY = Math.max(flappyGame.minRiseVelocityPerFrame, boostedJumpVelocity);
+      flappyGame.flapCooldownRemainingMs = flappyGame.flapCooldownMs;
+      flappyGame.jumpBufferRemainingMs = 0;
+      flappyGame.boundaryCoyoteRemainingMs = 0;
+      flappyGame.wasTouchingBoundary = false;
+    }
+
     function triggerFlappyJump() {
       if (!flappyGame.isRunning && !flappyGame.isGameOver) {
         flappyGame.isRunning = true;
@@ -972,8 +993,7 @@
       }
 
       if (flappyGame.isPaused) return;
-      const boostedJumpVelocity = flappyGame.jumpVelocity + Math.min(0, flappyGame.birdVelocityY * 0.08);
-      flappyGame.birdVelocityY = Math.max(flappyGame.minRiseVelocityPerFrame, boostedJumpVelocity);
+      flappyGame.jumpBufferRemainingMs = flappyGame.jumpBufferMs;
       updateFlappyHud();
     }
 
@@ -1003,28 +1023,53 @@
     function updateFlappyWorld(deltaScale) {
       if (!flappyGame.isRunning || flappyGame.isPaused || flappyGame.isGameOver) return;
 
+      const deltaMs = deltaScale * flappyGame.targetFrameMs;
+      flappyGame.flapCooldownRemainingMs = Math.max(0, flappyGame.flapCooldownRemainingMs - deltaMs);
+      flappyGame.jumpBufferRemainingMs = Math.max(0, flappyGame.jumpBufferRemainingMs - deltaMs);
+      flappyGame.boundaryCoyoteRemainingMs = Math.max(0, flappyGame.boundaryCoyoteRemainingMs - deltaMs);
+
+      if (flappyGame.jumpBufferRemainingMs > 0 && flappyGame.flapCooldownRemainingMs <= 0) {
+        applyFlappyJump();
+      }
+
       flappyGame.birdVelocityY += flappyGame.gravityPerFrame * deltaScale;
       flappyGame.birdVelocityY = Math.min(flappyGame.maxFallVelocityPerFrame, flappyGame.birdVelocityY);
       flappyGame.birdY += flappyGame.birdVelocityY * deltaScale;
       flappyGame.backgroundOffset += flappyGame.pipeSpeed * deltaScale;
 
-      if (flappyGame.birdY - flappyGame.birdRadius < 0) {
+      const hitCeiling = flappyGame.birdY - flappyGame.birdRadius < 0;
+      const hitGround = flappyGame.birdY + flappyGame.birdRadius > flappyCanvas.height - 24;
+      const isTouchingBoundary = hitCeiling || hitGround;
+
+      if (hitCeiling) {
         flappyGame.birdY = flappyGame.birdRadius;
-        flappyGame.birdVelocityY = 0;
+        flappyGame.birdVelocityY = Math.max(0, flappyGame.birdVelocityY);
+      }
+      if (hitGround) {
+        flappyGame.birdY = flappyCanvas.height - 24 - flappyGame.birdRadius;
       }
 
-      if (flappyGame.birdY + flappyGame.birdRadius > flappyCanvas.height - 24) {
+      if (isTouchingBoundary && !flappyGame.wasTouchingBoundary) {
+        flappyGame.boundaryCoyoteRemainingMs = flappyGame.boundaryCoyoteMs;
+      }
+
+      if (isTouchingBoundary && flappyGame.boundaryCoyoteRemainingMs <= 0) {
         endFlappyGame();
       }
+
+      if (!isTouchingBoundary) {
+        flappyGame.boundaryCoyoteRemainingMs = 0;
+      }
+      flappyGame.wasTouchingBoundary = isTouchingBoundary;
 
       flappyGame.pipes.forEach((pipe) => {
         pipe.x -= flappyGame.pipeSpeed * deltaScale;
 
-        const birdLeftEdge = flappyGame.birdX - flappyGame.birdRadius;
-        const birdRightEdge = flappyGame.birdX + flappyGame.birdRadius;
+        const birdLeftEdge = flappyGame.birdX - flappyGame.birdRadius + flappyGame.collisionPadding;
+        const birdRightEdge = flappyGame.birdX + flappyGame.birdRadius - flappyGame.collisionPadding;
         const isBirdInsidePipeX = birdRightEdge > pipe.x && birdLeftEdge < pipe.x + flappyGame.pipeWidth;
-        const isBirdOutsideGap = flappyGame.birdY - flappyGame.birdRadius < pipe.topHeight ||
-          flappyGame.birdY + flappyGame.birdRadius > pipe.topHeight + flappyGame.basePipeGap;
+        const isBirdOutsideGap = flappyGame.birdY - flappyGame.birdRadius + flappyGame.collisionPadding < pipe.topHeight ||
+          flappyGame.birdY + flappyGame.birdRadius - flappyGame.collisionPadding > pipe.topHeight + flappyGame.basePipeGap;
 
         if (isBirdInsidePipeX && isBirdOutsideGap) {
           endFlappyGame();

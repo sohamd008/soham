@@ -3,54 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Soham | Personal Landing Page</title>
-  <meta name="description" content="Soham's personal portfolio featuring projects, skills, achievements, and contact details.">
+  <title>SohamOS | Personal Tool Hub</title>
+  <meta name="description" content="A modern personal dashboard with daily tools, services, and mini games.">
   <style>
     :root {
-      --bg-1: #090a1a;
-      --bg-2: #0f1234;
-      --bg-3: #1a2355;
-      --text: #eef2ff;
-      --muted: #b6bfdc;
-      --primary: #6ee7ff;
+      --bg-1: #070b20;
+      --bg-2: #12183d;
+      --bg-3: #1a2e56;
+      --text: #eff4ff;
+      --muted: #b8c3e0;
+      --glass: rgba(255, 255, 255, 0.12);
+      --glass-border: rgba(255, 255, 255, 0.28);
+      --primary: #67e8f9;
       --secondary: #a78bfa;
-      --card: rgba(255, 255, 255, 0.12);
-      --card-border: rgba(255, 255, 255, 0.28);
-      --shadow: 0 10px 35px rgba(0, 0, 0, 0.35);
-      --radius: 18px;
+      --ok: #34d399;
+      --danger: #fb7185;
+      --shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+      --radius: 16px;
     }
 
     body.light {
-      --bg-1: #e9f1ff;
-      --bg-2: #f7f3ff;
-      --bg-3: #effafc;
-      --text: #111827;
+      --bg-1: #ebf2ff;
+      --bg-2: #f7f7ff;
+      --bg-3: #edf8ff;
+      --text: #101828;
       --muted: #4b5563;
+      --glass: rgba(255, 255, 255, 0.62);
+      --glass-border: rgba(255, 255, 255, 0.95);
       --primary: #0891b2;
       --secondary: #7c3aed;
-      --card: rgba(255, 255, 255, 0.55);
-      --card-border: rgba(255, 255, 255, 0.9);
-      --shadow: 0 10px 26px rgba(17, 24, 39, 0.12);
+      --ok: #059669;
+      --danger: #e11d48;
+      --shadow: 0 12px 30px rgba(17, 24, 39, 0.13);
     }
 
-    * {
-      box-sizing: border-box;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body {
       margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
       font-family: "Inter", "Segoe UI", Roboto, sans-serif;
       color: var(--text);
-      background: linear-gradient(-45deg, var(--bg-1), var(--bg-2), var(--bg-3), #1e1b4b);
-      background-size: 300% 300%;
-      animation: bgShift 16s ease infinite;
-      min-height: 100vh;
-      line-height: 1.6;
-      overflow-x: hidden;
+      background: linear-gradient(-45deg, var(--bg-1), var(--bg-2), var(--bg-3), #1d2354);
+      background-size: 320% 320%;
+      animation: bgShift 17s ease infinite;
     }
 
     @keyframes bgShift {
@@ -65,41 +62,26 @@
       height: 320px;
       border-radius: 50%;
       filter: blur(70px);
-      z-index: 0;
       pointer-events: none;
-      opacity: 0.45;
+      opacity: 0.4;
+      z-index: 0;
     }
-
-    .blob.one {
-      background: #22d3ee;
-      top: -80px;
-      left: -80px;
-    }
-
-    .blob.two {
-      background: #8b5cf6;
-      right: -80px;
-      top: 120px;
-    }
-
-    .blob.three {
-      background: #34d399;
-      bottom: -100px;
-      left: 35%;
-    }
+    .blob.one { top: -90px; left: -90px; background: #22d3ee; }
+    .blob.two { right: -90px; top: 110px; background: #8b5cf6; }
+    .blob.three { left: 40%; bottom: -110px; background: #34d399; }
 
     .container {
-      width: min(1100px, 92%);
+      width: min(1150px, 92%);
       margin: 0 auto;
       position: relative;
       z-index: 1;
     }
 
     .glass {
-      background: var(--card);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--card-border);
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
     }
@@ -108,12 +90,13 @@
       position: sticky;
       top: 14px;
       margin-top: 14px;
-      padding: 12px 18px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 14px;
       z-index: 10;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
     }
 
     .brand {
@@ -121,262 +104,243 @@
       letter-spacing: 0.3px;
       font-size: 1rem;
     }
+    .brand span { color: var(--primary); }
 
-    .brand span {
-      color: var(--primary);
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .nav-links a, .chip-btn {
+    .links { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+    .links a {
       color: var(--text);
       text-decoration: none;
-      font-size: 0.92rem;
+      font-size: 0.9rem;
       opacity: 0.95;
     }
-
-    .nav-links a:hover {
-      color: var(--primary);
-    }
+    .links a:hover { color: var(--primary); }
 
     .chip-btn {
-      border: 1px solid var(--card-border);
+      border: 1px solid var(--glass-border);
       background: transparent;
-      padding: 7px 11px;
-      border-radius: 12px;
+      color: var(--text);
+      border-radius: 11px;
+      padding: 7px 10px;
       cursor: pointer;
     }
 
     .hero {
-      margin-top: 70px;
-      padding: 44px;
+      margin-top: 22px;
+      padding: 32px;
       display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 22px;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 20px;
       align-items: center;
     }
 
-    .eyebrow {
-      display: inline-block;
-      padding: 6px 12px;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      letter-spacing: 0.4px;
-      border: 1px solid var(--card-border);
-      background: rgba(255, 255, 255, 0.05);
-    }
-
     h1 {
-      margin: 14px 0 10px;
-      font-size: clamp(2rem, 4.6vw, 3.8rem);
+      margin: 0 0 8px;
+      font-size: clamp(1.9rem, 4.4vw, 3.4rem);
       line-height: 1.1;
     }
-
-    .gradient-text {
+    .gradient {
       background: linear-gradient(120deg, var(--primary), var(--secondary));
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
     }
 
-    .lead {
-      color: var(--muted);
-      margin-bottom: 22px;
-      max-width: 60ch;
-    }
-
-    .hero-cta {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .btn {
-      border: none;
-      border-radius: 12px;
-      padding: 11px 16px;
-      font-weight: 600;
-      text-decoration: none;
-      cursor: pointer;
-      transition: 0.2s ease;
-      display: inline-block;
-    }
-
-    .btn.primary {
-      color: #071016;
-      background: linear-gradient(90deg, var(--primary), #67e8f9);
-    }
-
-    .btn.primary:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.03);
-    }
-
-    .btn.ghost {
-      color: var(--text);
-      background: transparent;
-      border: 1px solid var(--card-border);
-    }
-
-    .stat-grid {
+    .muted { color: var(--muted); }
+    .quick-info {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(2, 1fr);
       gap: 10px;
     }
-
-    .stat {
-      padding: 16px;
-      text-align: center;
-      border-radius: 14px;
-      border: 1px solid var(--card-border);
+    .info-card {
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 12px;
       background: rgba(255, 255, 255, 0.06);
     }
-
-    .stat strong {
-      font-size: 1.25rem;
-      display: block;
-    }
+    .info-card b { display: block; font-size: 1.05rem; }
 
     section {
-      margin-top: 26px;
-      padding: 28px;
+      margin-top: 20px;
+      padding: 24px;
     }
+    h2 { margin: 0 0 14px; font-size: 1.45rem; }
 
-    h2 {
-      margin-top: 0;
-      margin-bottom: 14px;
-      font-size: 1.55rem;
-    }
-
-    .split {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    .project-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-    }
-
-    .card {
-      padding: 18px;
-      border-radius: 14px;
-      border: 1px solid var(--card-border);
-      background: rgba(255, 255, 255, 0.08);
-      transition: transform 0.2s ease, border-color 0.2s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-3px);
-      border-color: rgba(110, 231, 255, 0.8);
-    }
-
-    .tag-wrap {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .tag {
-      font-size: 0.78rem;
-      padding: 4px 9px;
-      border-radius: 999px;
-      border: 1px solid var(--card-border);
-      background: rgba(255, 255, 255, 0.09);
-    }
-
-    .timeline {
-      border-left: 2px solid rgba(255, 255, 255, 0.22);
-      margin-left: 8px;
-      padding-left: 18px;
-    }
-
-    .timeline-item {
-      margin-bottom: 18px;
-      position: relative;
-    }
-
-    .timeline-item::before {
-      content: "";
-      position: absolute;
-      left: -26px;
-      top: 5px;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--primary);
-      box-shadow: 0 0 0 3px rgba(110, 231, 255, 0.15);
-    }
-
-    .contact-row {
+    .search-wrap {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .search-wrap input {
+      flex: 1;
+      min-width: 220px;
+      border-radius: 11px;
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text);
+      padding: 10px 12px;
     }
 
-    .contact-link {
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .tool-card {
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 14px;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .tool-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(103, 232, 249, 0.8);
+    }
+
+    .tool-card h3 {
+      margin: 0 0 6px;
+      font-size: 1.03rem;
+    }
+
+    .tool-card p {
+      margin: 0 0 10px;
+      font-size: 0.92rem;
+      color: var(--muted);
+      min-height: 42px;
+    }
+
+    .tool-card a {
+      display: inline-block;
       text-decoration: none;
       color: var(--text);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 10px 14px;
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      padding: 7px 10px;
+      font-size: 0.84rem;
       background: rgba(255, 255, 255, 0.07);
     }
 
-    .contact-link:hover {
-      border-color: rgba(110, 231, 255, 0.8);
+    .tool-card a:hover { border-color: rgba(103, 232, 249, 0.8); }
+
+    .layout-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
     }
+
+    .mini-tool {
+      border: 1px solid var(--glass-border);
+      border-radius: 13px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .row input[type="text"], .row input[type="number"] {
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.07);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 10px;
+      min-width: 110px;
+    }
+
+    .btn {
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 8px 11px;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .btn.primary {
+      color: #06131b;
+      border-color: transparent;
+      background: linear-gradient(90deg, var(--primary), #67e8f9);
+      font-weight: 600;
+    }
+
+    .status-good { color: var(--ok); }
+    .status-bad { color: var(--danger); }
+
+    .game-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .tab {
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      padding: 8px 11px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .tab.active {
+      border-color: rgba(103, 232, 249, 0.8);
+      box-shadow: inset 0 0 0 1px rgba(103, 232, 249, 0.5);
+    }
+
+    .game-panel { display: none; }
+    .game-panel.active { display: block; }
+
+    #flappyCanvas {
+      width: 100%;
+      max-width: 500px;
+      height: 280px;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
+      background: linear-gradient(180deg, #2f6fdd, #88d6ff);
+      display: block;
+    }
+
+    .guess-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+      max-width: 260px;
+    }
+    .guess-cell {
+      text-align: center;
+      padding: 9px;
+      border-radius: 10px;
+      border: 1px solid var(--glass-border);
+      background: rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .reveal { opacity: 0; transform: translateY(12px); transition: 0.4s ease; }
+    .reveal.show { opacity: 1; transform: translateY(0); }
 
     footer {
       text-align: center;
-      padding: 26px 0 38px;
       color: var(--muted);
+      padding: 24px 0 36px;
       font-size: 0.9rem;
     }
 
-    .hidden {
-      opacity: 0;
-      transform: translateY(14px);
-      transition: all 0.45s ease;
+    @media (max-width: 980px) {
+      .hero, .layout-2 { grid-template-columns: 1fr; }
+      .grid { grid-template-columns: 1fr 1fr; }
     }
-
-    .show {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    @media (max-width: 930px) {
-      .hero, .split {
-        grid-template-columns: 1fr;
-      }
-
-      .project-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
-    @media (max-width: 640px) {
-      nav {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-
-      .hero {
-        margin-top: 20px;
-        padding: 26px;
-      }
-
-      .project-grid {
-        grid-template-columns: 1fr;
-      }
+    @media (max-width: 650px) {
+      .grid { grid-template-columns: 1fr; }
+      .quick-info { grid-template-columns: 1fr; }
+      .hero { padding: 24px; }
+      .guess-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
   </style>
 </head>
@@ -386,157 +350,509 @@
   <div class="blob three"></div>
 
   <div class="container">
-    <nav class="glass hidden">
-      <div class="brand"><span>S</span>oham.dev</div>
-      <div class="nav-links">
-        <a href="#about">About</a>
-        <a href="#projects">Projects</a>
-        <a href="#journey">Journey</a>
-        <a href="#contact">Contact</a>
-        <button id="themeToggle" class="chip-btn" type="button">Toggle theme</button>
+    <nav class="glass reveal">
+      <div class="brand"><span>S</span>ohamOS</div>
+      <div class="links">
+        <a href="#tools">Tools</a>
+        <a href="#services">Services</a>
+        <a href="#games">Games</a>
+        <button id="themeToggle" class="chip-btn" type="button">Toggle Theme</button>
       </div>
     </nav>
 
-    <header class="hero glass hidden" id="home">
+    <header class="hero glass reveal">
       <div>
-        <span class="eyebrow">Open to internships and collaborations</span>
-        <h1>Hi, I'm <span class="gradient-text">Soham</span><br>Building modern web and AI experiences.</h1>
-        <p class="lead">
-          I design and build user-focused products with clean UI, solid engineering, and a touch of delightful interaction.
-          I enjoy turning ideas into polished, production-ready experiences.
-        </p>
-        <div class="hero-cta">
-          <a class="btn primary" href="#projects">View Projects</a>
-          <a class="btn ghost" href="#contact">Contact Me</a>
-        </div>
+        <h1>Personal <span class="gradient">Tool Hub</span> for Soham</h1>
+        <p class="muted">A private-feel productivity home: quick links, mini utilities, and games when you want a break.</p>
       </div>
-      <div class="stat-grid">
-        <div class="stat">
-          <strong>12+</strong>
-          Projects shipped
+      <div class="quick-info">
+        <div class="info-card">
+          <b id="liveDate">--</b>
+          <span class="muted">Date</span>
         </div>
-        <div class="stat">
-          <strong>4+</strong>
-          Hackathons
+        <div class="info-card">
+          <b id="liveTime">--</b>
+          <span class="muted">Local Time</span>
         </div>
-        <div class="stat">
-          <strong>6+</strong>
-          Tech stacks
+        <div class="info-card">
+          <b id="focusTimerLabel">25:00</b>
+          <span class="muted">Focus Timer</span>
         </div>
-        <div class="stat">
-          <strong>∞</strong>
-          Curiosity
+        <div class="info-card">
+          <b id="quoteLabel">Build one useful thing.</b>
+          <span class="muted">Today Note</span>
         </div>
       </div>
     </header>
 
-    <section id="about" class="glass hidden">
-      <h2>About Me</h2>
-      <div class="split">
-        <p>
-          I am Soham, a developer who enjoys creating sleek interfaces and practical backend systems.
-          My focus areas include frontend engineering, automation, and AI-enhanced apps. I care about
-          performance, maintainable code, and meaningful user outcomes.
-        </p>
-        <p>
-          Outside of coding, I participate in hackathons, explore new technologies, and document what I learn.
-          I am currently leveling up in full-stack architecture and product thinking.
-        </p>
+    <section id="tools" class="glass reveal">
+      <h2>Daily Tools</h2>
+      <div class="search-wrap">
+        <input id="toolSearch" type="text" placeholder="Search tools and services...">
       </div>
-    </section>
-
-    <section id="projects" class="glass hidden">
-      <h2>Featured Projects</h2>
-      <div class="project-grid">
-        <article class="card">
-          <h3>AI Resume Analyzer</h3>
-          <p>Analyzes resumes with actionable feedback and readability scoring in seconds.</p>
-          <div class="tag-wrap">
-            <span class="tag">React</span>
-            <span class="tag">Python</span>
-            <span class="tag">NLP</span>
-          </div>
+      <div id="toolGrid" class="grid">
+        <article class="tool-card" data-name="github code repo">
+          <h3>GitHub</h3>
+          <p>Manage repositories, issues, and pull requests quickly.</p>
+          <a href="https://github.com/" target="_blank" rel="noreferrer">Open</a>
         </article>
-        <article class="card">
-          <h3>Smart Habit Tracker</h3>
-          <p>Tracks habits with streak analytics, reminders, and motivational insights.</p>
-          <div class="tag-wrap">
-            <span class="tag">Next.js</span>
-            <span class="tag">Node.js</span>
-            <span class="tag">MongoDB</span>
-          </div>
+        <article class="tool-card" data-name="cursor ide coding">
+          <h3>Cursor</h3>
+          <p>Launch coding work and manage AI-assisted development.</p>
+          <a href="https://www.cursor.com/" target="_blank" rel="noreferrer">Open</a>
         </article>
-        <article class="card">
-          <h3>Campus Connect</h3>
-          <p>Platform for student clubs to publish events, recruit members, and coordinate teams.</p>
-          <div class="tag-wrap">
-            <span class="tag">TypeScript</span>
-            <span class="tag">Firebase</span>
-            <span class="tag">UI/UX</span>
-          </div>
+        <article class="tool-card" data-name="gmail mail">
+          <h3>Gmail</h3>
+          <p>Inbox triage, follow-ups, and schedule communications.</p>
+          <a href="https://mail.google.com/" target="_blank" rel="noreferrer">Open</a>
+        </article>
+        <article class="tool-card" data-name="calendar google events">
+          <h3>Calendar</h3>
+          <p>Plan study blocks, meetings, and deadlines.</p>
+          <a href="https://calendar.google.com/" target="_blank" rel="noreferrer">Open</a>
+        </article>
+        <article class="tool-card" data-name="notion notes docs">
+          <h3>Notion</h3>
+          <p>Keep notes, roadmaps, and personal docs organized.</p>
+          <a href="https://www.notion.so/" target="_blank" rel="noreferrer">Open</a>
+        </article>
+        <article class="tool-card" data-name="youtube learning">
+          <h3>YouTube Learn</h3>
+          <p>Learning playlists for coding, design, and systems.</p>
+          <a href="https://www.youtube.com/" target="_blank" rel="noreferrer">Open</a>
         </article>
       </div>
     </section>
 
-    <section id="journey" class="glass hidden">
-      <h2>Journey</h2>
-      <div class="timeline">
-        <div class="timeline-item">
-          <strong>2026 - Building personal brand</strong>
-          <div>Launching portfolio projects and contributing to open source.</div>
-        </div>
-        <div class="timeline-item">
-          <strong>2025 - Full-stack exploration</strong>
-          <div>Built apps across React, APIs, authentication, and deployments.</div>
-        </div>
-        <div class="timeline-item">
-          <strong>2024 - Strong coding fundamentals</strong>
-          <div>Practiced DSA, problem solving, and software engineering basics.</div>
-        </div>
+    <section id="services" class="glass reveal">
+      <h2>Mini Services</h2>
+      <div class="layout-2">
+        <article class="mini-tool">
+          <h3>Focus Timer</h3>
+          <p class="muted">Pomodoro-style timer for focused deep work.</p>
+          <div class="row">
+            <input id="focusMinutes" type="number" min="1" max="120" value="25">
+            <button id="focusStart" class="btn primary" type="button">Start</button>
+            <button id="focusStop" class="btn" type="button">Stop</button>
+          </div>
+          <p id="focusStatus" class="muted">Idle</p>
+        </article>
+
+        <article class="mini-tool">
+          <h3>Quick Notes</h3>
+          <p class="muted">Saved automatically in your browser local storage.</p>
+          <textarea id="notesBox" rows="6" style="width:100%; border-radius:10px; border:1px solid var(--glass-border); background:rgba(255,255,255,0.07); color:var(--text); padding:10px; resize:vertical;"></textarea>
+        </article>
+
+        <article class="mini-tool">
+          <h3>URL Shortener (Local)</h3>
+          <p class="muted">Creates compact labels for long links (local-only).</p>
+          <div class="row">
+            <input id="longUrl" type="text" placeholder="Paste long URL">
+            <button id="makeShort" class="btn" type="button">Shorten</button>
+          </div>
+          <p id="shortResult" class="muted">No link generated yet.</p>
+        </article>
+
+        <article class="mini-tool">
+          <h3>Habit Check</h3>
+          <p class="muted">Quick daily completion tracker.</p>
+          <div class="row">
+            <label><input class="habit" type="checkbox"> Workout</label>
+            <label><input class="habit" type="checkbox"> DSA</label>
+            <label><input class="habit" type="checkbox"> Build</label>
+          </div>
+          <p id="habitStatus" class="status-bad">0 / 3 done</p>
+        </article>
       </div>
     </section>
 
-    <section id="contact" class="glass hidden">
-      <h2>Let's Connect</h2>
-      <p>Interested in collaborating, hiring, or just talking tech? Reach out anytime.</p>
-      <div class="contact-row">
-        <a class="contact-link" href="mailto:soham@example.com">Email</a>
-        <a class="contact-link" href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
-        <a class="contact-link" href="https://www.linkedin.com/" target="_blank" rel="noreferrer">LinkedIn</a>
-        <a class="contact-link" href="#" target="_blank" rel="noreferrer">Resume</a>
+    <section id="games" class="glass reveal">
+      <h2>Games Lounge</h2>
+      <p class="muted">Five games included. Use these for short breaks.</p>
+
+      <div class="game-tabs">
+        <button class="tab active" data-game="flappy" type="button">Flappy Bird</button>
+        <button class="tab" data-game="guess" type="button">Number Guess</button>
+        <button class="tab" data-game="reaction" type="button">Reaction Test</button>
+        <button class="tab" data-game="rps" type="button">Rock Paper Scissors</button>
+        <button class="tab" data-game="memory" type="button">Memory Tap</button>
+      </div>
+
+      <div id="flappy" class="game-panel active">
+        <p class="muted">Press <b>Space</b> to jump. Avoid pipes.</p>
+        <canvas id="flappyCanvas" width="500" height="280"></canvas>
+        <p><b>Score:</b> <span id="flappyScore">0</span> | <b>Best:</b> <span id="flappyBest">0</span></p>
+      </div>
+
+      <div id="guess" class="game-panel">
+        <p class="muted">Guess a number from 1 to 20.</p>
+        <div class="row">
+          <input id="guessInput" type="number" min="1" max="20" placeholder="Enter number">
+          <button id="guessBtn" class="btn primary" type="button">Guess</button>
+          <button id="guessReset" class="btn" type="button">Reset</button>
+        </div>
+        <p id="guessMsg" class="muted">Start guessing.</p>
+      </div>
+
+      <div id="reaction" class="game-panel">
+        <p class="muted">Click start and hit the button as soon as it turns green.</p>
+        <button id="reactionStart" class="btn primary" type="button">Start</button>
+        <button id="reactionTarget" class="btn" type="button" disabled>Wait...</button>
+        <p id="reactionMsg" class="muted">No attempts yet.</p>
+      </div>
+
+      <div id="rps" class="game-panel">
+        <p class="muted">Pick your move.</p>
+        <div class="row">
+          <button class="btn rps" data-move="rock" type="button">Rock</button>
+          <button class="btn rps" data-move="paper" type="button">Paper</button>
+          <button class="btn rps" data-move="scissors" type="button">Scissors</button>
+        </div>
+        <p id="rpsMsg" class="muted">Let's play.</p>
+      </div>
+
+      <div id="memory" class="game-panel">
+        <p class="muted">Memorize the highlighted number, then click it.</p>
+        <button id="memoryStart" class="btn primary" type="button">Start Round</button>
+        <div id="memoryGrid" class="guess-grid"></div>
+        <p id="memoryMsg" class="muted">Press start to begin.</p>
       </div>
     </section>
 
     <footer>
-      <span id="year"></span> Soham. Designed with glassmorphism and modern web vibes.
+      <span id="year"></span> SohamOS - private dashboard workspace
     </footer>
   </div>
 
   <script>
-    const observer = new IntersectionObserver((entries) => {
+    const revealObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           entry.target.classList.add("show");
         }
       });
-    }, { threshold: 0.15 });
+    }, { threshold: 0.12 });
+    document.querySelectorAll(".reveal").forEach((el) => revealObserver.observe(el));
 
-    document.querySelectorAll(".hidden").forEach((el) => observer.observe(el));
+    const year = document.getElementById("year");
+    year.textContent = new Date().getFullYear();
 
-    const yearEl = document.getElementById("year");
-    yearEl.textContent = new Date().getFullYear();
+    const dateEl = document.getElementById("liveDate");
+    const timeEl = document.getElementById("liveTime");
+    function updateClock() {
+      const now = new Date();
+      dateEl.textContent = now.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+      timeEl.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
 
-    const toggleBtn = document.getElementById("themeToggle");
+    const quotes = [
+      "Build one useful thing.",
+      "Consistency beats intensity.",
+      "Ship > perfect.",
+      "Small progress compounds."
+    ];
+    document.getElementById("quoteLabel").textContent = quotes[Math.floor(Math.random() * quotes.length)];
+
+    const themeToggle = document.getElementById("themeToggle");
     const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "light") {
-      document.body.classList.add("light");
+    if (savedTheme === "light") document.body.classList.add("light");
+    themeToggle.addEventListener("click", () => {
+      document.body.classList.toggle("light");
+      localStorage.setItem("theme", document.body.classList.contains("light") ? "light" : "dark");
+    });
+
+    const toolSearch = document.getElementById("toolSearch");
+    const toolCards = [...document.querySelectorAll(".tool-card")];
+    toolSearch.addEventListener("input", (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      toolCards.forEach((card) => {
+        const name = card.dataset.name || "";
+        const text = card.textContent.toLowerCase();
+        const show = name.includes(q) || text.includes(q);
+        card.style.display = show ? "block" : "none";
+      });
+    });
+
+    let focusTimer = null;
+    let focusSeconds = 25 * 60;
+    const focusLabel = document.getElementById("focusTimerLabel");
+    const focusStatus = document.getElementById("focusStatus");
+    function paintFocus() {
+      const mins = String(Math.floor(focusSeconds / 60)).padStart(2, "0");
+      const secs = String(focusSeconds % 60).padStart(2, "0");
+      focusLabel.textContent = mins + ":" + secs;
+    }
+    paintFocus();
+    document.getElementById("focusStart").addEventListener("click", () => {
+      if (focusTimer) return;
+      const inputMinutes = Math.max(1, Number(document.getElementById("focusMinutes").value) || 25);
+      if (focusSeconds <= 0 || focusSeconds > inputMinutes * 60) focusSeconds = inputMinutes * 60;
+      focusStatus.textContent = "Running";
+      focusTimer = setInterval(() => {
+        focusSeconds -= 1;
+        paintFocus();
+        if (focusSeconds <= 0) {
+          clearInterval(focusTimer);
+          focusTimer = null;
+          focusStatus.textContent = "Completed";
+          alert("Focus session complete.");
+        }
+      }, 1000);
+    });
+    document.getElementById("focusStop").addEventListener("click", () => {
+      clearInterval(focusTimer);
+      focusTimer = null;
+      focusSeconds = Math.max(1, Number(document.getElementById("focusMinutes").value) || 25) * 60;
+      paintFocus();
+      focusStatus.textContent = "Stopped and reset";
+    });
+
+    const notesBox = document.getElementById("notesBox");
+    notesBox.value = localStorage.getItem("soham_notes") || "";
+    notesBox.addEventListener("input", () => localStorage.setItem("soham_notes", notesBox.value));
+
+    document.getElementById("makeShort").addEventListener("click", () => {
+      const longUrl = document.getElementById("longUrl").value.trim();
+      const out = document.getElementById("shortResult");
+      if (!longUrl) {
+        out.textContent = "Enter a URL first.";
+        return;
+      }
+      const key = Math.random().toString(36).slice(2, 8);
+      out.textContent = "short://" + key + " -> " + longUrl;
+    });
+
+    const habits = [...document.querySelectorAll(".habit")];
+    const habitStatus = document.getElementById("habitStatus");
+    function updateHabit() {
+      const done = habits.filter((h) => h.checked).length;
+      habitStatus.textContent = done + " / " + habits.length + " done";
+      habitStatus.className = done === habits.length ? "status-good" : "status-bad";
+    }
+    habits.forEach((h) => h.addEventListener("change", updateHabit));
+    updateHabit();
+
+    const tabs = [...document.querySelectorAll(".tab")];
+    const panels = [...document.querySelectorAll(".game-panel")];
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        tabs.forEach((t) => t.classList.remove("active"));
+        panels.forEach((p) => p.classList.remove("active"));
+        tab.classList.add("active");
+        const id = tab.dataset.game;
+        document.getElementById(id).classList.add("active");
+      });
+    });
+
+    let guessTarget = Math.floor(Math.random() * 20) + 1;
+    document.getElementById("guessBtn").addEventListener("click", () => {
+      const val = Number(document.getElementById("guessInput").value);
+      const msg = document.getElementById("guessMsg");
+      if (!val || val < 1 || val > 20) {
+        msg.textContent = "Choose a number between 1 and 20.";
+        return;
+      }
+      if (val === guessTarget) msg.textContent = "Correct! Great guess.";
+      else msg.textContent = val < guessTarget ? "Too low." : "Too high.";
+    });
+    document.getElementById("guessReset").addEventListener("click", () => {
+      guessTarget = Math.floor(Math.random() * 20) + 1;
+      document.getElementById("guessMsg").textContent = "Reset done. Start guessing.";
+      document.getElementById("guessInput").value = "";
+    });
+
+    const reactionStart = document.getElementById("reactionStart");
+    const reactionTarget = document.getElementById("reactionTarget");
+    const reactionMsg = document.getElementById("reactionMsg");
+    let reactionStartTime = 0;
+    let reactionReady = false;
+    reactionStart.addEventListener("click", () => {
+      reactionReady = false;
+      reactionTarget.disabled = true;
+      reactionTarget.textContent = "Wait...";
+      reactionTarget.style.background = "rgba(255,255,255,0.08)";
+      reactionMsg.textContent = "Get ready...";
+      const delay = 1200 + Math.floor(Math.random() * 2200);
+      setTimeout(() => {
+        reactionReady = true;
+        reactionStartTime = performance.now();
+        reactionTarget.disabled = false;
+        reactionTarget.textContent = "CLICK!";
+        reactionTarget.style.background = "var(--ok)";
+      }, delay);
+    });
+    reactionTarget.addEventListener("click", () => {
+      if (!reactionReady) return;
+      const ms = Math.floor(performance.now() - reactionStartTime);
+      reactionMsg.textContent = "Reaction time: " + ms + " ms";
+      reactionReady = false;
+      reactionTarget.disabled = true;
+      reactionTarget.textContent = "Wait...";
+      reactionTarget.style.background = "rgba(255,255,255,0.08)";
+    });
+
+    const rpsMoves = ["rock", "paper", "scissors"];
+    const rpsMsg = document.getElementById("rpsMsg");
+    document.querySelectorAll(".rps").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const you = btn.dataset.move;
+        const cpu = rpsMoves[Math.floor(Math.random() * 3)];
+        let result = "Draw";
+        if (
+          (you === "rock" && cpu === "scissors") ||
+          (you === "paper" && cpu === "rock") ||
+          (you === "scissors" && cpu === "paper")
+        ) result = "You win";
+        else if (you !== cpu) result = "CPU wins";
+        rpsMsg.textContent = "You: " + you + " | CPU: " + cpu + " -> " + result;
+      });
+    });
+
+    const memoryGrid = document.getElementById("memoryGrid");
+    const memoryMsg = document.getElementById("memoryMsg");
+    let memoryTarget = 1;
+    function buildMemoryGrid() {
+      memoryGrid.innerHTML = "";
+      for (let i = 1; i <= 12; i += 1) {
+        const cell = document.createElement("button");
+        cell.type = "button";
+        cell.className = "guess-cell";
+        cell.textContent = String(i);
+        cell.addEventListener("click", () => {
+          if (i === memoryTarget) memoryMsg.textContent = "Correct.";
+          else memoryMsg.textContent = "Wrong. Target was " + memoryTarget + ".";
+        });
+        memoryGrid.appendChild(cell);
+      }
+    }
+    buildMemoryGrid();
+    document.getElementById("memoryStart").addEventListener("click", () => {
+      memoryTarget = Math.floor(Math.random() * 12) + 1;
+      memoryMsg.textContent = "Memorize: " + memoryTarget;
+      [...memoryGrid.children].forEach((node) => {
+        node.style.borderColor = "var(--glass-border)";
+        if (Number(node.textContent) === memoryTarget) {
+          node.style.borderColor = "var(--primary)";
+        }
+      });
+      setTimeout(() => {
+        memoryMsg.textContent = "Now click the remembered number.";
+        [...memoryGrid.children].forEach((node) => {
+          node.style.borderColor = "var(--glass-border)";
+        });
+      }, 1200);
+    });
+
+    const canvas = document.getElementById("flappyCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreEl = document.getElementById("flappyScore");
+    const bestEl = document.getElementById("flappyBest");
+    let best = Number(localStorage.getItem("flappy_best") || 0);
+    bestEl.textContent = String(best);
+
+    let birdY = 120;
+    let birdVel = 0;
+    let score = 0;
+    let pipes = [];
+    let gameOver = false;
+    const gravity = 0.32;
+    const jump = -5.8;
+    const pipeGap = 95;
+    const pipeWidth = 48;
+
+    function resetFlappy() {
+      birdY = 120;
+      birdVel = 0;
+      score = 0;
+      pipes = [{ x: 520, top: 55 }, { x: 760, top: 120 }];
+      gameOver = false;
+      scoreEl.textContent = "0";
     }
 
-    toggleBtn.addEventListener("click", () => {
-      document.body.classList.toggle("light");
-      const activeTheme = document.body.classList.contains("light") ? "light" : "dark";
-      localStorage.setItem("theme", activeTheme);
+    function drawBird() {
+      ctx.beginPath();
+      ctx.fillStyle = "#fef08a";
+      ctx.arc(90, birdY, 12, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawPipe(pipe) {
+      ctx.fillStyle = "#14532d";
+      ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
+      ctx.fillRect(pipe.x, pipe.top + pipeGap, pipeWidth, canvas.height - (pipe.top + pipeGap));
+    }
+
+    function tickFlappy() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      birdVel += gravity;
+      birdY += birdVel;
+      if (birdY < 0) birdY = 0;
+      if (birdY > canvas.height) gameOver = true;
+
+      pipes.forEach((pipe) => {
+        pipe.x -= 2.1;
+        drawPipe(pipe);
+
+        const hitX = 90 + 12 > pipe.x && 90 - 12 < pipe.x + pipeWidth;
+        const hitY = birdY - 12 < pipe.top || birdY + 12 > pipe.top + pipeGap;
+        if (hitX && hitY) gameOver = true;
+
+        if (!pipe.passed && pipe.x + pipeWidth < 90) {
+          pipe.passed = true;
+          score += 1;
+          scoreEl.textContent = String(score);
+        }
+      });
+
+      if (pipes[0].x < -pipeWidth) pipes.shift();
+      const last = pipes[pipes.length - 1];
+      if (last.x < 330) {
+        const top = 30 + Math.floor(Math.random() * 140);
+        pipes.push({ x: canvas.width + 40, top: top });
+      }
+
+      drawBird();
+      if (gameOver) {
+        if (score > best) {
+          best = score;
+          localStorage.setItem("flappy_best", String(best));
+          bestEl.textContent = String(best);
+        }
+        ctx.fillStyle = "rgba(0,0,0,0.35)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#fff";
+        ctx.font = "18px Inter, sans-serif";
+        ctx.fillText("Game Over - press Space to restart", 110, 145);
+        return;
+      }
+      requestAnimationFrame(tickFlappy);
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.code !== "Space") return;
+      e.preventDefault();
+      if (gameOver) {
+        resetFlappy();
+        requestAnimationFrame(tickFlappy);
+      } else {
+        birdVel = jump;
+      }
     });
+
+    canvas.addEventListener("click", () => {
+      if (gameOver) {
+        resetFlappy();
+        requestAnimationFrame(tickFlappy);
+      } else {
+        birdVel = jump;
+      }
+    });
+
+    resetFlappy();
+    requestAnimationFrame(tickFlappy);
   </script>
 </body>
 </html>

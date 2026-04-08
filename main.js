@@ -1,0 +1,2164 @@
+const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("show");
+        }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll(".reveal").forEach((el) => revealObserver.observe(el));
+
+    const year = document.getElementById("year");
+    year.textContent = new Date().getFullYear();
+
+    const dateEl = document.getElementById("liveDate");
+    const timeEl = document.getElementById("liveTime");
+    function updateClock() {
+      const now = new Date();
+      dateEl.textContent = now.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+      timeEl.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    const quotes = [
+      "Build one useful thing.",
+      "Consistency beats intensity.",
+      "Ship > perfect.",
+      "Small progress compounds."
+    ];
+    document.getElementById("quoteLabel").textContent = quotes[Math.floor(Math.random() * quotes.length)];
+
+    const themeToggle = document.getElementById("themeToggle");
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "light") document.body.classList.add("light");
+    themeToggle.addEventListener("click", () => {
+      document.body.classList.toggle("light");
+      localStorage.setItem("theme", document.body.classList.contains("light") ? "light" : "dark");
+    });
+
+    const toolSearch = document.getElementById("toolSearch");
+    const toolCards = [...document.querySelectorAll(".tool-card")];
+    toolSearch.addEventListener("input", (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      toolCards.forEach((card) => {
+        const name = card.dataset.name || "";
+        const text = card.textContent.toLowerCase();
+        const show = name.includes(q) || text.includes(q);
+        card.style.display = show ? "block" : "none";
+      });
+    });
+
+    let focusTimer = null;
+    let focusSeconds = 25 * 60;
+    const focusLabel = document.getElementById("focusTimerLabel");
+    const focusStatus = document.getElementById("focusStatus");
+    function paintFocus() {
+      const mins = String(Math.floor(focusSeconds / 60)).padStart(2, "0");
+      const secs = String(focusSeconds % 60).padStart(2, "0");
+      focusLabel.textContent = mins + ":" + secs;
+    }
+    paintFocus();
+    document.getElementById("focusStart").addEventListener("click", () => {
+      if (focusTimer) return;
+      const inputMinutes = Math.max(1, Number(document.getElementById("focusMinutes").value) || 25);
+      if (focusSeconds <= 0 || focusSeconds > inputMinutes * 60) focusSeconds = inputMinutes * 60;
+      focusStatus.textContent = "Running";
+      focusTimer = setInterval(() => {
+        focusSeconds -= 1;
+        paintFocus();
+        if (focusSeconds <= 0) {
+          clearInterval(focusTimer);
+          focusTimer = null;
+          focusStatus.textContent = "Completed";
+          alert("Focus session complete.");
+        }
+      }, 1000);
+    });
+    document.getElementById("focusStop").addEventListener("click", () => {
+      clearInterval(focusTimer);
+      focusTimer = null;
+      focusSeconds = Math.max(1, Number(document.getElementById("focusMinutes").value) || 25) * 60;
+      paintFocus();
+      focusStatus.textContent = "Stopped and reset";
+    });
+
+    const notesBox = document.getElementById("notesBox");
+    const notesList = document.getElementById("notesList");
+    const noteSearchInput = document.getElementById("noteSearchInput");
+    const noteTitleInput = document.getElementById("noteTitleInput");
+    const notesStatus = document.getElementById("notesStatus");
+    const noteNewButton = document.getElementById("noteNewBtn");
+    const noteSaveButton = document.getElementById("noteSaveBtn");
+    const noteDeleteButton = document.getElementById("noteDeleteBtn");
+    const noteExportButton = document.getElementById("noteExportBtn");
+    const noteImportButton = document.getElementById("noteImportBtn");
+    const noteImportFileInput = document.getElementById("noteImportFile");
+
+    function createNoteObject(noteTitle, noteBody) {
+      return {
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+        title: noteTitle || "Untitled",
+        content: noteBody || "",
+        updatedAt: new Date().toISOString()
+      };
+    }
+
+    function getStoredNotesState() {
+      const rawNotesState = localStorage.getItem("soham_notes_state");
+      if (rawNotesState) {
+        try {
+          const parsedNotesState = JSON.parse(rawNotesState);
+          if (Array.isArray(parsedNotesState.notes) && parsedNotesState.notes.length) {
+            return parsedNotesState;
+          }
+        } catch (error) {}
+      }
+
+      const legacySingleNote = localStorage.getItem("soham_notes") || "";
+      return {
+        activeNoteId: "",
+        notes: [createNoteObject("Quick Notes", legacySingleNote)]
+      };
+    }
+
+    let notesState = getStoredNotesState();
+    if (!notesState.notes.length) {
+      notesState.notes = [createNoteObject("Quick Notes", "")];
+    }
+    if (!notesState.activeNoteId || !notesState.notes.some((note) => note.id === notesState.activeNoteId)) {
+      notesState.activeNoteId = notesState.notes[0].id;
+    }
+
+    let notesAutosaveTimer = null;
+
+    function persistNotesState(statusLabel) {
+      localStorage.setItem("soham_notes_state", JSON.stringify(notesState));
+      if (statusLabel) {
+        notesStatus.textContent = statusLabel + " - " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      }
+    }
+
+    function getActiveNote() {
+      return notesState.notes.find((note) => note.id === notesState.activeNoteId) || notesState.notes[0];
+    }
+
+    function renderNotesList() {
+      const searchQuery = noteSearchInput.value.trim().toLowerCase();
+      notesList.innerHTML = "";
+      const visibleNotes = notesState.notes.filter((note) => {
+        if (!searchQuery) return true;
+        return note.title.toLowerCase().includes(searchQuery) || note.content.toLowerCase().includes(searchQuery);
+      });
+
+      visibleNotes
+        .sort((firstNote, secondNote) => new Date(secondNote.updatedAt) - new Date(firstNote.updatedAt))
+        .forEach((note) => {
+          const noteButton = document.createElement("button");
+          noteButton.type = "button";
+          noteButton.className = "note-item";
+          if (note.id === notesState.activeNoteId) noteButton.classList.add("active");
+          const compactPreview = (note.content || "").replace(/\s+/g, " ").slice(0, 40);
+          noteButton.textContent = note.title + (compactPreview ? " - " + compactPreview : "");
+          noteButton.addEventListener("click", () => {
+            notesState.activeNoteId = note.id;
+            renderNotesEditor();
+            renderNotesList();
+          });
+          notesList.appendChild(noteButton);
+        });
+
+      if (!visibleNotes.length) {
+        const emptyLabel = document.createElement("div");
+        emptyLabel.className = "notes-status";
+        emptyLabel.textContent = "No matching notes.";
+        notesList.appendChild(emptyLabel);
+      }
+    }
+
+    function renderNotesEditor() {
+      const activeNote = getActiveNote();
+      noteTitleInput.value = activeNote.title;
+      notesBox.value = activeNote.content;
+    }
+
+    function saveEditorToActiveNote(statusLabel) {
+      const activeNote = getActiveNote();
+      if (!activeNote) return;
+      activeNote.title = (noteTitleInput.value || "Untitled").trim() || "Untitled";
+      activeNote.content = notesBox.value;
+      activeNote.updatedAt = new Date().toISOString();
+      persistNotesState(statusLabel || "Saved");
+      renderNotesList();
+    }
+
+    function queueNotesAutosave() {
+      clearTimeout(notesAutosaveTimer);
+      notesStatus.textContent = "Editing...";
+      notesAutosaveTimer = setTimeout(() => {
+        saveEditorToActiveNote("Autosaved");
+      }, 450);
+    }
+
+    noteTitleInput.addEventListener("input", queueNotesAutosave);
+    notesBox.addEventListener("input", queueNotesAutosave);
+    noteSearchInput.addEventListener("input", renderNotesList);
+
+    noteNewButton.addEventListener("click", () => {
+      const newNote = createNoteObject("New Note", "");
+      notesState.notes.unshift(newNote);
+      notesState.activeNoteId = newNote.id;
+      persistNotesState("Created");
+      renderNotesEditor();
+      renderNotesList();
+    });
+
+    noteSaveButton.addEventListener("click", () => {
+      saveEditorToActiveNote("Saved");
+    });
+
+    noteDeleteButton.addEventListener("click", () => {
+      if (notesState.notes.length === 1) {
+        const onlyNote = notesState.notes[0];
+        onlyNote.title = "Quick Notes";
+        onlyNote.content = "";
+        onlyNote.updatedAt = new Date().toISOString();
+        renderNotesEditor();
+        persistNotesState("Cleared");
+        renderNotesList();
+        return;
+      }
+      notesState.notes = notesState.notes.filter((note) => note.id !== notesState.activeNoteId);
+      notesState.activeNoteId = notesState.notes[0].id;
+      persistNotesState("Deleted");
+      renderNotesEditor();
+      renderNotesList();
+    });
+
+    noteExportButton.addEventListener("click", () => {
+      const exportBlob = new Blob([JSON.stringify(notesState, null, 2)], { type: "application/json" });
+      const downloadUrl = URL.createObjectURL(exportBlob);
+      const exportLink = document.createElement("a");
+      exportLink.href = downloadUrl;
+      exportLink.download = "soham-notes.json";
+      exportLink.click();
+      URL.revokeObjectURL(downloadUrl);
+      notesStatus.textContent = "Exported notes.";
+    });
+
+    noteImportButton.addEventListener("click", () => {
+      noteImportFileInput.click();
+    });
+
+    noteImportFileInput.addEventListener("change", async () => {
+      const selectedFile = noteImportFileInput.files && noteImportFileInput.files[0];
+      if (!selectedFile) return;
+      try {
+        const importedContent = await selectedFile.text();
+        const parsed = JSON.parse(importedContent);
+        if (!Array.isArray(parsed.notes) || !parsed.notes.length) {
+          notesStatus.textContent = "Invalid import file.";
+          return;
+        }
+        const normalizedNotes = parsed.notes.map((note) => ({
+          id: note.id || (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random())),
+          title: (note.title || "Imported note").toString(),
+          content: (note.content || "").toString(),
+          updatedAt: note.updatedAt || new Date().toISOString()
+        }));
+        notesState = {
+          notes: normalizedNotes,
+          activeNoteId: normalizedNotes[0].id
+        };
+        persistNotesState("Imported");
+        renderNotesEditor();
+        renderNotesList();
+      } catch (error) {
+        notesStatus.textContent = "Import failed.";
+      }
+      noteImportFileInput.value = "";
+    });
+
+    renderNotesEditor();
+    renderNotesList();
+    notesStatus.textContent = "Ready";
+
+    const shortenInput = document.getElementById("longUrl");
+    const shortenCreateButton = document.getElementById("makeShort");
+    const shortenCopyButton = document.getElementById("copyShort");
+    const shortenOutput = document.getElementById("shortResult");
+    const shortenHint = document.getElementById("shortCodeHint");
+    let latestShortUrl = "";
+
+    function getShortenerMap() {
+      try {
+        const rawMap = localStorage.getItem("soham_short_links");
+        return rawMap ? JSON.parse(rawMap) : {};
+      } catch (error) {
+        return {};
+      }
+    }
+
+    function saveShortenerMap(shortenerMap) {
+      localStorage.setItem("soham_short_links", JSON.stringify(shortenerMap));
+    }
+
+    function normalizeUrl(userInputUrl) {
+      if (!userInputUrl) return "";
+      const trimmedValue = userInputUrl.trim();
+      if (!trimmedValue) return "";
+      const withProtocol = /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(trimmedValue) ? trimmedValue : "https://" + trimmedValue;
+      try {
+        return new URL(withProtocol).toString();
+      } catch (error) {
+        return "";
+      }
+    }
+
+    function generateShortCode(existingMap) {
+      const alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      let generatedCode = "";
+      do {
+        generatedCode = "";
+        for (let index = 0; index < 6; index += 1) {
+          generatedCode += alphabet[Math.floor(Math.random() * alphabet.length)];
+        }
+      } while (existingMap[generatedCode]);
+      return generatedCode;
+    }
+
+    function buildShortUrlFromCode(shortCode) {
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set("s", shortCode);
+      currentUrl.hash = "";
+      return currentUrl.toString();
+    }
+
+    function resolveShortLinkFromQuery() {
+      const currentUrl = new URL(window.location.href);
+      const requestedCode = currentUrl.searchParams.get("s");
+      if (!requestedCode) return;
+      const shortenerMap = getShortenerMap();
+      const targetEntry = shortenerMap[requestedCode];
+      if (!targetEntry || !targetEntry.url) {
+        shortenOutput.textContent = "Short code not found on this browser: " + requestedCode;
+        return;
+      }
+      shortenOutput.textContent = "Redirecting to " + targetEntry.url;
+      setTimeout(() => {
+        window.location.href = targetEntry.url;
+      }, 250);
+    }
+
+    shortenCreateButton.addEventListener("click", () => {
+      const normalizedTargetUrl = normalizeUrl(shortenInput.value);
+      if (!normalizedTargetUrl) {
+        shortenOutput.textContent = "Enter a valid URL. Example: github.com";
+        latestShortUrl = "";
+        return;
+      }
+
+      const shortenerMap = getShortenerMap();
+      let existingCode = "";
+      Object.keys(shortenerMap).forEach((shortCode) => {
+        if (shortenerMap[shortCode] && shortenerMap[shortCode].url === normalizedTargetUrl) {
+          existingCode = shortCode;
+        }
+      });
+      const shortCode = existingCode || generateShortCode(shortenerMap);
+      shortenerMap[shortCode] = {
+        url: normalizedTargetUrl,
+        createdAt: new Date().toISOString()
+      };
+      saveShortenerMap(shortenerMap);
+
+      latestShortUrl = buildShortUrlFromCode(shortCode);
+      shortenHint.textContent = "Code: " + shortCode;
+      shortenOutput.innerHTML = "";
+      const previewAnchor = document.createElement("a");
+      previewAnchor.href = latestShortUrl;
+      previewAnchor.textContent = latestShortUrl;
+      previewAnchor.style.color = "var(--primary)";
+      previewAnchor.target = "_blank";
+      previewAnchor.rel = "noreferrer";
+      shortenOutput.appendChild(previewAnchor);
+    });
+
+    shortenCopyButton.addEventListener("click", async () => {
+      if (!latestShortUrl) {
+        shortenOutput.textContent = "Create a short URL first.";
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(latestShortUrl);
+        shortenOutput.textContent = "Copied: " + latestShortUrl;
+      } catch (error) {
+        shortenOutput.textContent = "Copy failed. URL: " + latestShortUrl;
+      }
+    });
+
+    resolveShortLinkFromQuery();
+
+    const habits = [...document.querySelectorAll(".habit")];
+    const habitStatus = document.getElementById("habitStatus");
+    function updateHabit() {
+      const done = habits.filter((h) => h.checked).length;
+      habitStatus.textContent = done + " / " + habits.length + " done";
+      habitStatus.className = done === habits.length ? "status-good" : "status-bad";
+    }
+    habits.forEach((h) => h.addEventListener("change", updateHabit));
+    updateHabit();
+
+    const tabs = [...document.querySelectorAll(".tab")];
+    const panels = [...document.querySelectorAll(".game-panel")];
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        tabs.forEach((t) => t.classList.remove("active"));
+        panels.forEach((p) => p.classList.remove("active"));
+        tab.classList.add("active");
+        const id = tab.dataset.game;
+        document.getElementById(id).classList.add("active");
+      });
+    });
+
+    const snakeCanvas = document.getElementById("snakeCanvas");
+    const snakeContext = snakeCanvas.getContext("2d");
+    const snakeMessage = document.getElementById("snakeMsg");
+    const snakeAutoButton = document.getElementById("snakeAuto");
+    const snakeCellSize = 18;
+    const snakeGridSize = snakeCanvas.width / snakeCellSize;
+    let snakeDirection = { x: 1, y: 0 };
+    let snakeNextDirection = { x: 1, y: 0 };
+    let snakeBody = [{ x: 6, y: 10 }, { x: 5, y: 10 }, { x: 4, y: 10 }];
+    let snakeFood = { x: 14, y: 10 };
+    let snakeScore = 0;
+    let snakeBestScore = Number(localStorage.getItem("snake_best") || 0);
+    let snakeTimer = null;
+    let snakeGameOver = false;
+    let snakeAutoEnabled = false;
+
+    function spawnSnakeFood() {
+      let foundSpot = false;
+      while (!foundSpot) {
+        const randomFoodX = Math.floor(Math.random() * snakeGridSize);
+        const randomFoodY = Math.floor(Math.random() * snakeGridSize);
+        const isOnSnake = snakeBody.some((segment) => segment.x === randomFoodX && segment.y === randomFoodY);
+        if (!isOnSnake) {
+          snakeFood = { x: randomFoodX, y: randomFoodY };
+          foundSpot = true;
+        }
+      }
+    }
+
+    function renderSnake() {
+      snakeContext.fillStyle = "#06111f";
+      snakeContext.fillRect(0, 0, snakeCanvas.width, snakeCanvas.height);
+      snakeContext.fillStyle = "rgba(255,255,255,0.04)";
+      for (let gridRow = 0; gridRow < snakeGridSize; gridRow += 1) {
+        for (let gridColumn = 0; gridColumn < snakeGridSize; gridColumn += 1) {
+          snakeContext.fillRect(gridColumn * snakeCellSize + 1, gridRow * snakeCellSize + 1, snakeCellSize - 2, snakeCellSize - 2);
+        }
+      }
+
+      snakeContext.fillStyle = "#fb7185";
+      snakeContext.fillRect(snakeFood.x * snakeCellSize + 2, snakeFood.y * snakeCellSize + 2, snakeCellSize - 4, snakeCellSize - 4);
+
+      snakeBody.forEach((segment, index) => {
+        snakeContext.fillStyle = index === 0 ? "#67e8f9" : "#22c55e";
+        snakeContext.fillRect(segment.x * snakeCellSize + 2, segment.y * snakeCellSize + 2, snakeCellSize - 4, snakeCellSize - 4);
+      });
+    }
+
+    function updateSnakeMessage(extraText) {
+      snakeMessage.textContent = "Score: " + snakeScore + " | Best: " + snakeBestScore + (extraText ? " | " + extraText : "");
+    }
+
+    function getSnakeSafeDirections() {
+      const candidateDirections = [
+        { x: 0, y: -1, name: "up" },
+        { x: 0, y: 1, name: "down" },
+        { x: -1, y: 0, name: "left" },
+        { x: 1, y: 0, name: "right" }
+      ];
+      const snakeHead = snakeBody[0];
+      return candidateDirections.filter((direction) => {
+        if (direction.x === -snakeDirection.x && direction.y === -snakeDirection.y) return false;
+        const nextX = snakeHead.x + direction.x;
+        const nextY = snakeHead.y + direction.y;
+        const collidesWithWall = nextX < 0 || nextY < 0 || nextX >= snakeGridSize || nextY >= snakeGridSize;
+        if (collidesWithWall) return false;
+        const collidesWithBody = snakeBody.some((segment) => segment.x === nextX && segment.y === nextY);
+        return !collidesWithBody;
+      });
+    }
+
+    function runSnakeAutoPilot() {
+      const snakeHead = snakeBody[0];
+      const safeDirections = getSnakeSafeDirections();
+      if (!safeDirections.length) return;
+      safeDirections.sort((firstDirection, secondDirection) => {
+        const firstDistance = Math.abs((snakeHead.x + firstDirection.x) - snakeFood.x) + Math.abs((snakeHead.y + firstDirection.y) - snakeFood.y);
+        const secondDistance = Math.abs((snakeHead.x + secondDirection.x) - snakeFood.x) + Math.abs((snakeHead.y + secondDirection.y) - snakeFood.y);
+        return firstDistance - secondDistance;
+      });
+      snakeNextDirection = { x: safeDirections[0].x, y: safeDirections[0].y };
+    }
+
+    function resetSnakeGame() {
+      snakeDirection = { x: 1, y: 0 };
+      snakeNextDirection = { x: 1, y: 0 };
+      snakeBody = [{ x: 6, y: 10 }, { x: 5, y: 10 }, { x: 4, y: 10 }];
+      snakeScore = 0;
+      snakeGameOver = false;
+      spawnSnakeFood();
+      renderSnake();
+      updateSnakeMessage("Ready");
+    }
+
+    function stepSnakeGame() {
+      if (snakeGameOver) return;
+      if (snakeAutoEnabled) runSnakeAutoPilot();
+      snakeDirection = snakeNextDirection;
+      const currentHead = snakeBody[0];
+      const nextHead = { x: currentHead.x + snakeDirection.x, y: currentHead.y + snakeDirection.y };
+      const hitWall = nextHead.x < 0 || nextHead.y < 0 || nextHead.x >= snakeGridSize || nextHead.y >= snakeGridSize;
+      const hitSelf = snakeBody.some((segment) => segment.x === nextHead.x && segment.y === nextHead.y);
+
+      if (hitWall || hitSelf) {
+        snakeGameOver = true;
+        clearInterval(snakeTimer);
+        snakeTimer = null;
+        updateSnakeMessage("Game over");
+        return;
+      }
+
+      snakeBody.unshift(nextHead);
+      const ateFood = nextHead.x === snakeFood.x && nextHead.y === snakeFood.y;
+      if (ateFood) {
+        snakeScore += 1;
+        if (snakeScore > snakeBestScore) {
+          snakeBestScore = snakeScore;
+          localStorage.setItem("snake_best", String(snakeBestScore));
+        }
+        spawnSnakeFood();
+      } else {
+        snakeBody.pop();
+      }
+
+      renderSnake();
+      updateSnakeMessage();
+    }
+
+    document.getElementById("snakeStart").addEventListener("click", () => {
+      if (snakeTimer) return;
+      if (snakeGameOver) resetSnakeGame();
+      snakeTimer = setInterval(stepSnakeGame, 105);
+      updateSnakeMessage("Running");
+    });
+    document.getElementById("snakeReset").addEventListener("click", () => {
+      clearInterval(snakeTimer);
+      snakeTimer = null;
+      resetSnakeGame();
+    });
+    snakeAutoButton.addEventListener("click", () => {
+      snakeAutoEnabled = !snakeAutoEnabled;
+      snakeAutoButton.textContent = "AI Auto: " + (snakeAutoEnabled ? "On" : "Off");
+      updateSnakeMessage(snakeAutoEnabled ? "AI driving" : "Manual");
+    });
+
+    const board2048 = document.getElementById("board2048");
+    const message2048 = document.getElementById("msg2048");
+    const hint2048Button = document.getElementById("hint2048");
+    const auto2048Button = document.getElementById("auto2048");
+    let puzzle2048Grid = [];
+    let puzzle2048Score = 0;
+    let auto2048Enabled = false;
+    let auto2048Timer = null;
+
+    function create2048Cell(rowIndex, columnIndex, value) {
+      const valueToColorMap = {
+        2: "linear-gradient(140deg,#dbeafe,#93c5fd)",
+        4: "linear-gradient(140deg,#bfdbfe,#60a5fa)",
+        8: "linear-gradient(140deg,#a5f3fc,#22d3ee)",
+        16: "linear-gradient(140deg,#99f6e4,#34d399)",
+        32: "linear-gradient(140deg,#fde68a,#fbbf24)",
+        64: "linear-gradient(140deg,#fdba74,#fb923c)",
+        128: "linear-gradient(140deg,#fda4af,#fb7185)",
+        256: "linear-gradient(140deg,#f9a8d4,#ec4899)",
+        512: "linear-gradient(140deg,#ddd6fe,#a78bfa)",
+        1024: "linear-gradient(140deg,#c4b5fd,#8b5cf6)",
+        2048: "linear-gradient(140deg,#fef3c7,#f59e0b)"
+      };
+      const cellElement = document.createElement("button");
+      cellElement.type = "button";
+      cellElement.className = "guess-cell tile-2048";
+      cellElement.textContent = value === 0 ? "" : String(value);
+      cellElement.classList.toggle("tile-empty", value === 0);
+      cellElement.style.background = value === 0 ? "" : (valueToColorMap[value] || "linear-gradient(140deg,#e5e7eb,#9ca3af)");
+      cellElement.dataset.row = String(rowIndex);
+      cellElement.dataset.col = String(columnIndex);
+      return cellElement;
+    }
+
+    function render2048() {
+      board2048.innerHTML = "";
+      for (let rowIndex = 0; rowIndex < 4; rowIndex += 1) {
+        for (let columnIndex = 0; columnIndex < 4; columnIndex += 1) {
+          board2048.appendChild(create2048Cell(rowIndex, columnIndex, puzzle2048Grid[rowIndex][columnIndex]));
+        }
+      }
+      message2048.textContent = "Score: " + puzzle2048Score;
+    }
+
+    function addRandom2048Tile() {
+      const emptyCells = [];
+      for (let rowIndex = 0; rowIndex < 4; rowIndex += 1) {
+        for (let columnIndex = 0; columnIndex < 4; columnIndex += 1) {
+          if (puzzle2048Grid[rowIndex][columnIndex] === 0) {
+            emptyCells.push({ rowIndex, columnIndex });
+          }
+        }
+      }
+      if (!emptyCells.length) return;
+      const randomChoice = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+      puzzle2048Grid[randomChoice.rowIndex][randomChoice.columnIndex] = Math.random() < 0.9 ? 2 : 4;
+    }
+
+    function reset2048() {
+      puzzle2048Grid = Array.from({ length: 4 }, () => Array(4).fill(0));
+      puzzle2048Score = 0;
+      addRandom2048Tile();
+      addRandom2048Tile();
+      render2048();
+    }
+
+    function compress2048Row(values) {
+      const filteredValues = values.filter((value) => value !== 0);
+      const mergedValues = [];
+      for (let valueIndex = 0; valueIndex < filteredValues.length; valueIndex += 1) {
+        if (filteredValues[valueIndex] === filteredValues[valueIndex + 1]) {
+          const mergedValue = filteredValues[valueIndex] * 2;
+          mergedValues.push(mergedValue);
+          puzzle2048Score += mergedValue;
+          valueIndex += 1;
+        } else {
+          mergedValues.push(filteredValues[valueIndex]);
+        }
+      }
+      while (mergedValues.length < 4) mergedValues.push(0);
+      return mergedValues;
+    }
+
+    function move2048(direction) {
+      const previousState = JSON.stringify(puzzle2048Grid);
+      if (direction === "left") {
+        puzzle2048Grid = puzzle2048Grid.map((row) => compress2048Row(row));
+      } else if (direction === "right") {
+        puzzle2048Grid = puzzle2048Grid.map((row) => compress2048Row([...row].reverse()).reverse());
+      } else if (direction === "up") {
+        for (let columnIndex = 0; columnIndex < 4; columnIndex += 1) {
+          const columnValues = [puzzle2048Grid[0][columnIndex], puzzle2048Grid[1][columnIndex], puzzle2048Grid[2][columnIndex], puzzle2048Grid[3][columnIndex]];
+          const updatedColumn = compress2048Row(columnValues);
+          for (let rowIndex = 0; rowIndex < 4; rowIndex += 1) puzzle2048Grid[rowIndex][columnIndex] = updatedColumn[rowIndex];
+        }
+      } else if (direction === "down") {
+        for (let columnIndex = 0; columnIndex < 4; columnIndex += 1) {
+          const columnValues = [puzzle2048Grid[3][columnIndex], puzzle2048Grid[2][columnIndex], puzzle2048Grid[1][columnIndex], puzzle2048Grid[0][columnIndex]];
+          const updatedColumn = compress2048Row(columnValues);
+          for (let rowIndex = 0; rowIndex < 4; rowIndex += 1) puzzle2048Grid[3 - rowIndex][columnIndex] = updatedColumn[rowIndex];
+        }
+      }
+      if (JSON.stringify(puzzle2048Grid) !== previousState) addRandom2048Tile();
+      render2048();
+    }
+
+    document.getElementById("reset2048").addEventListener("click", reset2048);
+
+    function clone2048Grid(grid) {
+      return grid.map((row) => [...row]);
+    }
+
+    function evaluate2048Grid(grid) {
+      let emptyCellCount = 0;
+      let maxTileValue = 0;
+      let smoothnessPenalty = 0;
+      for (let rowIndex = 0; rowIndex < 4; rowIndex += 1) {
+        for (let columnIndex = 0; columnIndex < 4; columnIndex += 1) {
+          const value = grid[rowIndex][columnIndex];
+          if (value === 0) emptyCellCount += 1;
+          maxTileValue = Math.max(maxTileValue, value);
+          if (columnIndex < 3 && grid[rowIndex][columnIndex + 1] !== 0 && value !== 0) {
+            smoothnessPenalty += Math.abs(Math.log2(value) - Math.log2(grid[rowIndex][columnIndex + 1]));
+          }
+          if (rowIndex < 3 && grid[rowIndex + 1][columnIndex] !== 0 && value !== 0) {
+            smoothnessPenalty += Math.abs(Math.log2(value) - Math.log2(grid[rowIndex + 1][columnIndex]));
+          }
+        }
+      }
+      return emptyCellCount * 50 + Math.log2(maxTileValue || 1) * 20 - smoothnessPenalty * 4;
+    }
+
+    function simulate2048Move(simulationGrid, direction) {
+      const originalGridState = JSON.stringify(simulationGrid);
+
+      function compressRowForSimulation(values) {
+        const nonZeroValues = values.filter((value) => value !== 0);
+        const mergedValues = [];
+        for (let valueIndex = 0; valueIndex < nonZeroValues.length; valueIndex += 1) {
+          if (nonZeroValues[valueIndex] === nonZeroValues[valueIndex + 1]) {
+            mergedValues.push(nonZeroValues[valueIndex] * 2);
+            valueIndex += 1;
+          } else {
+            mergedValues.push(nonZeroValues[valueIndex]);
+          }
+        }
+        while (mergedValues.length < 4) mergedValues.push(0);
+        return mergedValues;
+      }
+
+      if (direction === "left") {
+        simulationGrid = simulationGrid.map((row) => compressRowForSimulation(row));
+      } else if (direction === "right") {
+        simulationGrid = simulationGrid.map((row) => compressRowForSimulation([...row].reverse()).reverse());
+      } else if (direction === "up") {
+        for (let columnIndex = 0; columnIndex < 4; columnIndex += 1) {
+          const columnValues = [simulationGrid[0][columnIndex], simulationGrid[1][columnIndex], simulationGrid[2][columnIndex], simulationGrid[3][columnIndex]];
+          const updatedColumn = compressRowForSimulation(columnValues);
+          for (let rowIndex = 0; rowIndex < 4; rowIndex += 1) simulationGrid[rowIndex][columnIndex] = updatedColumn[rowIndex];
+        }
+      } else if (direction === "down") {
+        for (let columnIndex = 0; columnIndex < 4; columnIndex += 1) {
+          const columnValues = [simulationGrid[3][columnIndex], simulationGrid[2][columnIndex], simulationGrid[1][columnIndex], simulationGrid[0][columnIndex]];
+          const updatedColumn = compressRowForSimulation(columnValues);
+          for (let rowIndex = 0; rowIndex < 4; rowIndex += 1) simulationGrid[3 - rowIndex][columnIndex] = updatedColumn[rowIndex];
+        }
+      }
+
+      const changed = JSON.stringify(simulationGrid) !== originalGridState;
+      return { changed, grid: simulationGrid };
+    }
+
+    function getBest2048Move() {
+      const directions = ["up", "left", "right", "down"];
+      let bestDirection = null;
+      let bestDirectionScore = -Infinity;
+      directions.forEach((direction) => {
+        const simulation = simulate2048Move(clone2048Grid(puzzle2048Grid), direction);
+        if (!simulation.changed) return;
+        const score = evaluate2048Grid(simulation.grid);
+        if (score > bestDirectionScore) {
+          bestDirectionScore = score;
+          bestDirection = direction;
+        }
+      });
+      return bestDirection;
+    }
+
+    hint2048Button.addEventListener("click", () => {
+      const bestMove = getBest2048Move();
+      if (bestMove) {
+        move2048(bestMove);
+      } else {
+        message2048.textContent = "Score: " + puzzle2048Score + " | No valid move";
+      }
+    });
+
+    auto2048Button.addEventListener("click", () => {
+      auto2048Enabled = !auto2048Enabled;
+      auto2048Button.textContent = "Auto: " + (auto2048Enabled ? "On" : "Off");
+      clearInterval(auto2048Timer);
+      auto2048Timer = null;
+      if (auto2048Enabled) {
+        auto2048Timer = setInterval(() => {
+          const bestMove = getBest2048Move();
+          if (bestMove) {
+            move2048(bestMove);
+          } else {
+            auto2048Enabled = false;
+            auto2048Button.textContent = "Auto: Off";
+            clearInterval(auto2048Timer);
+            auto2048Timer = null;
+          }
+        }, 180);
+      }
+    });
+
+    const ticGrid = document.getElementById("ticGrid");
+    const ticMessage = document.getElementById("ticMsg");
+    const ticDifficultySelect = document.getElementById("ticDifficulty");
+    let ticBoard = Array(9).fill("");
+    let ticGameDone = false;
+
+    function evaluateTicWinner(board) {
+      const winPatterns = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],
+        [0, 4, 8], [2, 4, 6]
+      ];
+      for (const [a, b, c] of winPatterns) {
+        if (board[a] && board[a] === board[b] && board[b] === board[c]) return board[a];
+      }
+      return board.includes("") ? null : "draw";
+    }
+
+    function minimaxTic(board, isMaximizing, depth) {
+      const result = evaluateTicWinner(board);
+      if (result === "O") return 10 - depth;
+      if (result === "X") return depth - 10;
+      if (result === "draw") return 0;
+
+      if (isMaximizing) {
+        let bestScore = -Infinity;
+        for (let index = 0; index < board.length; index += 1) {
+          if (!board[index]) {
+            board[index] = "O";
+            bestScore = Math.max(bestScore, minimaxTic(board, false, depth + 1));
+            board[index] = "";
+          }
+        }
+        return bestScore;
+      }
+
+      let bestScore = Infinity;
+      for (let index = 0; index < board.length; index += 1) {
+        if (!board[index]) {
+          board[index] = "X";
+          bestScore = Math.min(bestScore, minimaxTic(board, true, depth + 1));
+          board[index] = "";
+        }
+      }
+      return bestScore;
+    }
+
+    function getBestTicMove() {
+      const difficultyLevel = ticDifficultySelect.value;
+      const candidateMoves = [];
+      for (let index = 0; index < ticBoard.length; index += 1) {
+        if (!ticBoard[index]) {
+          ticBoard[index] = "O";
+          const score = minimaxTic(ticBoard, false, 0);
+          ticBoard[index] = "";
+          candidateMoves.push({ index, score });
+        }
+      }
+      if (!candidateMoves.length) return -1;
+      candidateMoves.sort((firstMove, secondMove) => secondMove.score - firstMove.score);
+      if (difficultyLevel === "easy" && Math.random() < 0.55) {
+        return candidateMoves[Math.floor(Math.random() * candidateMoves.length)].index;
+      }
+      if (difficultyLevel === "medium" && candidateMoves.length > 1 && Math.random() < 0.35) {
+        return candidateMoves[1].index;
+      }
+      return candidateMoves[0].index;
+    }
+
+    function renderTicBoard() {
+      ticGrid.innerHTML = "";
+      ticBoard.forEach((value, index) => {
+        const ticCellButton = document.createElement("button");
+        ticCellButton.type = "button";
+        ticCellButton.className = "guess-cell tic-cell";
+        if (value === "X") ticCellButton.classList.add("x");
+        if (value === "O") ticCellButton.classList.add("o");
+        ticCellButton.textContent = value;
+        ticCellButton.addEventListener("click", () => {
+          if (ticGameDone || ticBoard[index]) return;
+          ticBoard[index] = "X";
+          const playerResult = evaluateTicWinner(ticBoard);
+          if (playerResult) {
+            ticGameDone = true;
+            ticMessage.textContent = playerResult === "draw" ? "Draw game." : playerResult + " wins.";
+            renderTicBoard();
+            return;
+          }
+          const aiMove = getBestTicMove();
+          if (aiMove >= 0) ticBoard[aiMove] = "O";
+          const aiResult = evaluateTicWinner(ticBoard);
+          if (aiResult) {
+            ticGameDone = true;
+            ticMessage.textContent = aiResult === "draw" ? "Draw game." : aiResult + " wins.";
+          }
+          renderTicBoard();
+        });
+        ticGrid.appendChild(ticCellButton);
+      });
+    }
+
+    function resetTicGame() {
+      ticBoard = Array(9).fill("");
+      ticGameDone = false;
+      ticMessage.textContent = "Your turn.";
+      renderTicBoard();
+    }
+    document.getElementById("ticReset").addEventListener("click", resetTicGame);
+
+    const whackGrid = document.getElementById("whackGrid");
+    const whackMessage = document.getElementById("whackMsg");
+    let whackScore = 0;
+    let whackTimeLeft = 20;
+    let whackActiveIndex = -1;
+    let whackLastIndex = -1;
+    let whackMisses = 0;
+    let whackRoundTimer = null;
+    let whackMoleTimer = null;
+    let whackRoundRunning = false;
+    const whackCells = [];
+
+    function updateWhackHud(statusText) {
+      const statusSuffix = statusText ? " | " + statusText : "";
+      whackMessage.textContent = "Score: " + whackScore + " | Miss: " + whackMisses + " | Time: " + whackTimeLeft + statusSuffix;
+    }
+
+    function paintWhackCells() {
+      whackCells.forEach((cell, holeIndex) => {
+        const isActive = holeIndex === whackActiveIndex;
+        cell.classList.toggle("active", isActive);
+        cell.textContent = isActive ? "🐹" : "";
+      });
+    }
+
+    function pickNextWhackIndex() {
+      let nextIndex = Math.floor(Math.random() * 9);
+      if (nextIndex === whackLastIndex) {
+        nextIndex = (nextIndex + 1 + Math.floor(Math.random() * 8)) % 9;
+      }
+      whackLastIndex = nextIndex;
+      return nextIndex;
+    }
+
+    function scheduleNextMole() {
+      clearTimeout(whackMoleTimer);
+      if (!whackRoundRunning) return;
+      const appearanceDelayMs = 280 + Math.floor(Math.random() * 260);
+      whackMoleTimer = setTimeout(() => {
+        if (!whackRoundRunning) return;
+        if (whackActiveIndex >= 0) {
+          whackMisses += 1;
+        }
+        whackActiveIndex = pickNextWhackIndex();
+        paintWhackCells();
+        updateWhackHud();
+        scheduleNextMole();
+      }, appearanceDelayMs);
+    }
+
+    function stopWhackRound(statusText) {
+      clearInterval(whackRoundTimer);
+      clearTimeout(whackMoleTimer);
+      whackRoundTimer = null;
+      whackMoleTimer = null;
+      whackRoundRunning = false;
+      whackActiveIndex = -1;
+      paintWhackCells();
+      updateWhackHud(statusText || "Round over");
+    }
+
+    function startWhackRound() {
+      stopWhackRound("Starting...");
+      whackScore = 0;
+      whackMisses = 0;
+      whackTimeLeft = 20;
+      whackRoundRunning = true;
+      updateWhackHud("Go");
+      scheduleNextMole();
+      whackRoundTimer = setInterval(() => {
+        whackTimeLeft -= 1;
+        updateWhackHud();
+        if (whackTimeLeft <= 0) {
+          stopWhackRound("Round over");
+        }
+      }, 1000);
+    }
+
+    function buildWhackGrid() {
+      whackGrid.innerHTML = "";
+      whackCells.length = 0;
+      for (let holeIndex = 0; holeIndex < 9; holeIndex += 1) {
+        const holeButton = document.createElement("button");
+        holeButton.type = "button";
+        holeButton.className = "guess-cell whack-cell";
+        holeButton.addEventListener("click", () => {
+          if (!whackRoundRunning) return;
+          if (holeIndex === whackActiveIndex) {
+            whackScore += 1;
+            whackActiveIndex = -1;
+            paintWhackCells();
+            updateWhackHud("Nice hit");
+          } else {
+            whackMisses += 1;
+            updateWhackHud("Miss");
+          }
+        });
+        whackCells.push(holeButton);
+        whackGrid.appendChild(holeButton);
+      }
+      paintWhackCells();
+      updateWhackHud("Ready");
+    }
+    document.getElementById("whackStart").addEventListener("click", startWhackRound);
+
+    const connect4Grid = document.getElementById("connect4Grid");
+    const connect4Message = document.getElementById("connect4Msg");
+    let connect4Board = Array.from({ length: 6 }, () => Array(7).fill(""));
+    let connect4GameOver = false;
+
+    function getConnect4Winner(board) {
+      const directions = [
+        { r: 0, c: 1 },
+        { r: 1, c: 0 },
+        { r: 1, c: 1 },
+        { r: 1, c: -1 }
+      ];
+      for (let rowIndex = 0; rowIndex < 6; rowIndex += 1) {
+        for (let columnIndex = 0; columnIndex < 7; columnIndex += 1) {
+          const token = board[rowIndex][columnIndex];
+          if (!token) continue;
+          for (const direction of directions) {
+            let count = 1;
+            while (
+              count < 4 &&
+              rowIndex + direction.r * count >= 0 &&
+              rowIndex + direction.r * count < 6 &&
+              columnIndex + direction.c * count >= 0 &&
+              columnIndex + direction.c * count < 7 &&
+              board[rowIndex + direction.r * count][columnIndex + direction.c * count] === token
+            ) {
+              count += 1;
+            }
+            if (count === 4) return token;
+          }
+        }
+      }
+      const hasEmptyCell = board.some((row) => row.some((cell) => !cell));
+      return hasEmptyCell ? null : "draw";
+    }
+
+    function getConnect4DropRow(board, columnIndex) {
+      for (let rowIndex = 5; rowIndex >= 0; rowIndex -= 1) {
+        if (!board[rowIndex][columnIndex]) return rowIndex;
+      }
+      return -1;
+    }
+
+    function scoreConnect4Window(windowValues, token) {
+      const opponentToken = token === "Y" ? "R" : "Y";
+      const tokenCount = windowValues.filter((value) => value === token).length;
+      const emptyCount = windowValues.filter((value) => value === "").length;
+      const opponentCount = windowValues.filter((value) => value === opponentToken).length;
+      if (tokenCount === 4) return 100000;
+      if (tokenCount === 3 && emptyCount === 1) return 120;
+      if (tokenCount === 2 && emptyCount === 2) return 18;
+      if (opponentCount === 3 && emptyCount === 1) return -95;
+      if (opponentCount === 2 && emptyCount === 2) return -10;
+      return 0;
+    }
+
+    function evaluateConnect4Board(board, token) {
+      let score = 0;
+      const centerColumn = board.map((row) => row[3]);
+      score += centerColumn.filter((value) => value === token).length * 6;
+      for (let rowIndex = 0; rowIndex < 6; rowIndex += 1) {
+        for (let columnIndex = 0; columnIndex < 4; columnIndex += 1) {
+          score += scoreConnect4Window([board[rowIndex][columnIndex], board[rowIndex][columnIndex + 1], board[rowIndex][columnIndex + 2], board[rowIndex][columnIndex + 3]], token);
+        }
+      }
+      for (let rowIndex = 0; rowIndex < 3; rowIndex += 1) {
+        for (let columnIndex = 0; columnIndex < 7; columnIndex += 1) {
+          score += scoreConnect4Window([board[rowIndex][columnIndex], board[rowIndex + 1][columnIndex], board[rowIndex + 2][columnIndex], board[rowIndex + 3][columnIndex]], token);
+        }
+      }
+      for (let rowIndex = 0; rowIndex < 3; rowIndex += 1) {
+        for (let columnIndex = 0; columnIndex < 4; columnIndex += 1) {
+          score += scoreConnect4Window([board[rowIndex][columnIndex], board[rowIndex + 1][columnIndex + 1], board[rowIndex + 2][columnIndex + 2], board[rowIndex + 3][columnIndex + 3]], token);
+        }
+      }
+      for (let rowIndex = 3; rowIndex < 6; rowIndex += 1) {
+        for (let columnIndex = 0; columnIndex < 4; columnIndex += 1) {
+          score += scoreConnect4Window([board[rowIndex][columnIndex], board[rowIndex - 1][columnIndex + 1], board[rowIndex - 2][columnIndex + 2], board[rowIndex - 3][columnIndex + 3]], token);
+        }
+      }
+      return score;
+    }
+
+    function minimaxConnect4(board, depth, alpha, beta, maximizingPlayer) {
+      const winner = getConnect4Winner(board);
+      if (winner === "Y") return { score: 1000000 + depth };
+      if (winner === "R") return { score: -1000000 - depth };
+      if (winner === "draw") return { score: 0 };
+      if (depth === 0) return { score: evaluateConnect4Board(board, "Y") };
+
+      const validColumns = [];
+      for (let columnIndex = 0; columnIndex < 7; columnIndex += 1) {
+        if (getConnect4DropRow(board, columnIndex) >= 0) validColumns.push(columnIndex);
+      }
+      if (!validColumns.length) return { score: 0 };
+
+      if (maximizingPlayer) {
+        let bestResult = { score: -Infinity, column: validColumns[0] };
+        for (const columnIndex of validColumns) {
+          const dropRow = getConnect4DropRow(board, columnIndex);
+          const boardCopy = board.map((row) => [...row]);
+          boardCopy[dropRow][columnIndex] = "Y";
+          const branchResult = minimaxConnect4(boardCopy, depth - 1, alpha, beta, false);
+          if (branchResult.score > bestResult.score) {
+            bestResult = { score: branchResult.score, column: columnIndex };
+          }
+          alpha = Math.max(alpha, branchResult.score);
+          if (alpha >= beta) break;
+        }
+        return bestResult;
+      }
+
+      let bestResult = { score: Infinity, column: validColumns[0] };
+      for (const columnIndex of validColumns) {
+        const dropRow = getConnect4DropRow(board, columnIndex);
+        const boardCopy = board.map((row) => [...row]);
+        boardCopy[dropRow][columnIndex] = "R";
+        const branchResult = minimaxConnect4(boardCopy, depth - 1, alpha, beta, true);
+        if (branchResult.score < bestResult.score) {
+          bestResult = { score: branchResult.score, column: columnIndex };
+        }
+        beta = Math.min(beta, branchResult.score);
+        if (alpha >= beta) break;
+      }
+      return bestResult;
+    }
+
+    function renderConnect4Board() {
+      connect4Grid.innerHTML = "";
+      for (let rowIndex = 0; rowIndex < 6; rowIndex += 1) {
+        for (let columnIndex = 0; columnIndex < 7; columnIndex += 1) {
+          const connect4Cell = document.createElement("button");
+          connect4Cell.type = "button";
+          connect4Cell.className = "guess-cell connect4-cell";
+          const token = connect4Board[rowIndex][columnIndex];
+          if (token === "R") connect4Cell.classList.add("red");
+          if (token === "Y") connect4Cell.classList.add("yellow");
+          connect4Cell.addEventListener("click", () => {
+            if (connect4GameOver) return;
+            const playerDropRow = getConnect4DropRow(connect4Board, columnIndex);
+            if (playerDropRow < 0) return;
+            connect4Board[playerDropRow][columnIndex] = "R";
+            let currentWinner = getConnect4Winner(connect4Board);
+            if (currentWinner) {
+              connect4GameOver = true;
+              connect4Message.textContent = currentWinner === "draw" ? "Draw game." : (currentWinner === "R" ? "You win." : "AI wins.");
+              renderConnect4Board();
+              return;
+            }
+            const aiDecision = minimaxConnect4(connect4Board.map((row) => [...row]), 4, -Infinity, Infinity, true);
+            const aiDropColumn = aiDecision.column;
+            const aiDropRow = getConnect4DropRow(connect4Board, aiDropColumn);
+            if (aiDropRow >= 0) connect4Board[aiDropRow][aiDropColumn] = "Y";
+            currentWinner = getConnect4Winner(connect4Board);
+            if (currentWinner) {
+              connect4GameOver = true;
+              connect4Message.textContent = currentWinner === "draw" ? "Draw game." : (currentWinner === "R" ? "You win." : "AI wins.");
+            } else {
+              connect4Message.textContent = "Your turn.";
+            }
+            renderConnect4Board();
+          });
+          connect4Grid.appendChild(connect4Cell);
+        }
+      }
+    }
+
+    function resetConnect4Game() {
+      connect4Board = Array.from({ length: 6 }, () => Array(7).fill(""));
+      connect4GameOver = false;
+      connect4Message.textContent = "Your turn.";
+      renderConnect4Board();
+    }
+    document.getElementById("connect4Reset").addEventListener("click", resetConnect4Game);
+
+    const pongCanvas = document.getElementById("pongCanvas");
+    const pongContext = pongCanvas.getContext("2d");
+    const pongMessage = document.getElementById("pongMsg");
+    const pongState = {
+      ballX: pongCanvas.width / 2,
+      ballY: pongCanvas.height / 2,
+      ballVelocityX: 3.8,
+      ballVelocityY: 2.1,
+      paddleLeftY: 120,
+      paddleRightY: 120,
+      paddleHeight: 72,
+      paddleWidth: 10,
+      scoreYou: 0,
+      scoreAI: 0,
+      running: false,
+      moveUp: false,
+      moveDown: false
+    };
+
+    function resetPongBall() {
+      pongState.ballX = pongCanvas.width / 2;
+      pongState.ballY = pongCanvas.height / 2;
+      const horizontalDirection = Math.random() > 0.5 ? 1 : -1;
+      pongState.ballVelocityX = horizontalDirection * (3.5 + Math.random() * 1.5);
+      pongState.ballVelocityY = (Math.random() * 4) - 2;
+    }
+
+    function resetPongGame() {
+      pongState.scoreYou = 0;
+      pongState.scoreAI = 0;
+      pongState.paddleLeftY = 120;
+      pongState.paddleRightY = 120;
+      resetPongBall();
+      pongMessage.textContent = "You: 0 | AI: 0";
+      renderPong();
+    }
+
+    function renderPong() {
+      pongContext.fillStyle = "#06111f";
+      pongContext.fillRect(0, 0, pongCanvas.width, pongCanvas.height);
+      pongContext.fillStyle = "rgba(255,255,255,0.2)";
+      for (let dashedY = 0; dashedY < pongCanvas.height; dashedY += 20) {
+        pongContext.fillRect(pongCanvas.width / 2 - 1, dashedY, 2, 12);
+      }
+      pongContext.fillStyle = "#67e8f9";
+      pongContext.fillRect(16, pongState.paddleLeftY, pongState.paddleWidth, pongState.paddleHeight);
+      pongContext.fillStyle = "#fbbf24";
+      pongContext.fillRect(pongCanvas.width - 26, pongState.paddleRightY, pongState.paddleWidth, pongState.paddleHeight);
+      pongContext.beginPath();
+      pongContext.fillStyle = "#f8fafc";
+      pongContext.arc(pongState.ballX, pongState.ballY, 7, 0, Math.PI * 2);
+      pongContext.fill();
+    }
+
+    function stepPong() {
+      if (!pongState.running) return;
+      if (pongState.moveUp) pongState.paddleLeftY -= 5.2;
+      if (pongState.moveDown) pongState.paddleLeftY += 5.2;
+      pongState.paddleLeftY = Math.max(0, Math.min(pongCanvas.height - pongState.paddleHeight, pongState.paddleLeftY));
+
+      const targetRightY = pongState.ballY - pongState.paddleHeight / 2;
+      const aiSpeed = 3.1 + Math.min(2.2, Math.abs(pongState.ballVelocityX) * 0.35);
+      if (pongState.paddleRightY < targetRightY) pongState.paddleRightY += aiSpeed;
+      if (pongState.paddleRightY > targetRightY) pongState.paddleRightY -= aiSpeed;
+      pongState.paddleRightY = Math.max(0, Math.min(pongCanvas.height - pongState.paddleHeight, pongState.paddleRightY));
+
+      pongState.ballX += pongState.ballVelocityX;
+      pongState.ballY += pongState.ballVelocityY;
+
+      if (pongState.ballY <= 7 || pongState.ballY >= pongCanvas.height - 7) {
+        pongState.ballVelocityY *= -1;
+      }
+
+      const leftPaddleHit = pongState.ballX <= 28 &&
+        pongState.ballY >= pongState.paddleLeftY &&
+        pongState.ballY <= pongState.paddleLeftY + pongState.paddleHeight;
+      const rightPaddleHit = pongState.ballX >= pongCanvas.width - 28 &&
+        pongState.ballY >= pongState.paddleRightY &&
+        pongState.ballY <= pongState.paddleRightY + pongState.paddleHeight;
+
+      if (leftPaddleHit) {
+        pongState.ballVelocityX = Math.abs(pongState.ballVelocityX) + 0.2;
+        pongState.ballVelocityY += (pongState.ballY - (pongState.paddleLeftY + pongState.paddleHeight / 2)) * 0.05;
+      }
+      if (rightPaddleHit) {
+        pongState.ballVelocityX = -Math.abs(pongState.ballVelocityX) - 0.2;
+        pongState.ballVelocityY += (pongState.ballY - (pongState.paddleRightY + pongState.paddleHeight / 2)) * 0.05;
+      }
+
+      if (pongState.ballX < -12) {
+        pongState.scoreAI += 1;
+        resetPongBall();
+      }
+      if (pongState.ballX > pongCanvas.width + 12) {
+        pongState.scoreYou += 1;
+        resetPongBall();
+      }
+
+      pongMessage.textContent = "You: " + pongState.scoreYou + " | AI: " + pongState.scoreAI;
+      renderPong();
+      requestAnimationFrame(stepPong);
+    }
+
+    document.getElementById("pongStart").addEventListener("click", () => {
+      if (pongState.running) return;
+      pongState.running = true;
+      requestAnimationFrame(stepPong);
+    });
+    document.getElementById("pongReset").addEventListener("click", () => {
+      pongState.running = false;
+      resetPongGame();
+    });
+
+    const memoryMatchGrid = document.getElementById("memoryMatchGrid");
+    const memoryMatchMessage = document.getElementById("memoryMatchMsg");
+    const memoryIcons = ["🚀", "🎮", "⚡", "🎯", "🔥", "🧠", "💎", "🛸"];
+    let memoryCards = [];
+    let memoryOpenIndexes = [];
+    let memoryMatchedCount = 0;
+    let memoryMoves = 0;
+    let memoryBusy = false;
+
+    function shuffleArray(values) {
+      const copiedValues = [...values];
+      for (let index = copiedValues.length - 1; index > 0; index -= 1) {
+        const randomIndex = Math.floor(Math.random() * (index + 1));
+        [copiedValues[index], copiedValues[randomIndex]] = [copiedValues[randomIndex], copiedValues[index]];
+      }
+      return copiedValues;
+    }
+
+    function renderMemoryMatch() {
+      memoryMatchGrid.innerHTML = "";
+      memoryCards.forEach((card, cardIndex) => {
+        const cardButton = document.createElement("button");
+        cardButton.type = "button";
+        cardButton.className = "memory-card";
+        if (card.revealed) cardButton.classList.add("revealed");
+        if (card.matched) cardButton.classList.add("matched");
+        cardButton.textContent = card.revealed || card.matched ? card.icon : "•";
+        cardButton.addEventListener("click", () => {
+          if (memoryBusy || card.matched || card.revealed) return;
+          card.revealed = true;
+          memoryOpenIndexes.push(cardIndex);
+          renderMemoryMatch();
+          if (memoryOpenIndexes.length === 2) {
+            memoryMoves += 1;
+            const [firstIndex, secondIndex] = memoryOpenIndexes;
+            const firstCard = memoryCards[firstIndex];
+            const secondCard = memoryCards[secondIndex];
+            if (firstCard.icon === secondCard.icon) {
+              firstCard.matched = true;
+              secondCard.matched = true;
+              memoryMatchedCount += 1;
+              memoryOpenIndexes = [];
+              renderMemoryMatch();
+              memoryMatchMessage.textContent = "Moves: " + memoryMoves + " | Matched: " + memoryMatchedCount + "/8";
+              if (memoryMatchedCount === 8) {
+                memoryMatchMessage.textContent += " | Completed!";
+              }
+            } else {
+              memoryBusy = true;
+              setTimeout(() => {
+                firstCard.revealed = false;
+                secondCard.revealed = false;
+                memoryOpenIndexes = [];
+                memoryBusy = false;
+                renderMemoryMatch();
+              }, 520);
+            }
+          }
+          memoryMatchMessage.textContent = "Moves: " + memoryMoves + " | Matched: " + memoryMatchedCount + "/8";
+        });
+        memoryMatchGrid.appendChild(cardButton);
+      });
+    }
+
+    function resetMemoryMatch() {
+      const deckIcons = shuffleArray([...memoryIcons, ...memoryIcons]);
+      memoryCards = deckIcons.map((icon) => ({ icon, revealed: false, matched: false }));
+      memoryOpenIndexes = [];
+      memoryMatchedCount = 0;
+      memoryMoves = 0;
+      memoryBusy = false;
+      renderMemoryMatch();
+      memoryMatchMessage.textContent = "Moves: 0 | Matched: 0/8";
+    }
+    document.getElementById("memoryMatchReset").addEventListener("click", resetMemoryMatch);
+
+    const shooterCanvas = document.getElementById("shooterCanvas");
+    const shooterContext = shooterCanvas.getContext("2d");
+    const shooterMessage = document.getElementById("shooterMsg");
+    const shooterState = {
+      running: false,
+      leftPressed: false,
+      rightPressed: false,
+      playerX: 280,
+      lives: 3,
+      score: 0,
+      bullets: [],
+      enemies: [],
+      enemyDirection: 1,
+      lastEnemyStepAt: 0,
+      lastBulletAt: 0
+    };
+
+    function resetShooterEnemies() {
+      shooterState.enemies = [];
+      for (let rowIndex = 0; rowIndex < 3; rowIndex += 1) {
+        for (let colIndex = 0; colIndex < 8; colIndex += 1) {
+          shooterState.enemies.push({
+            x: 70 + colIndex * 55,
+            y: 40 + rowIndex * 34,
+            alive: true
+          });
+        }
+      }
+    }
+
+    function resetShooterGame() {
+      shooterState.playerX = shooterCanvas.width / 2;
+      shooterState.lives = 3;
+      shooterState.score = 0;
+      shooterState.bullets = [];
+      shooterState.enemyDirection = 1;
+      shooterState.lastEnemyStepAt = 0;
+      shooterState.lastBulletAt = 0;
+      resetShooterEnemies();
+      drawShooterFrame();
+      shooterMessage.textContent = "Score: 0 | Lives: 3";
+    }
+
+    function drawShooterFrame() {
+      shooterContext.fillStyle = "#050a16";
+      shooterContext.fillRect(0, 0, shooterCanvas.width, shooterCanvas.height);
+      shooterContext.fillStyle = "rgba(255,255,255,0.12)";
+      for (let starIndex = 0; starIndex < 40; starIndex += 1) {
+        shooterContext.fillRect((starIndex * 73) % shooterCanvas.width, (starIndex * 57) % shooterCanvas.height, 2, 2);
+      }
+
+      shooterContext.fillStyle = "#67e8f9";
+      shooterContext.beginPath();
+      shooterContext.moveTo(shooterState.playerX, shooterCanvas.height - 34);
+      shooterContext.lineTo(shooterState.playerX - 12, shooterCanvas.height - 10);
+      shooterContext.lineTo(shooterState.playerX + 12, shooterCanvas.height - 10);
+      shooterContext.closePath();
+      shooterContext.fill();
+
+      shooterContext.fillStyle = "#f8fafc";
+      shooterState.bullets.forEach((bullet) => {
+        shooterContext.fillRect(bullet.x - 2, bullet.y - 8, 4, 10);
+      });
+
+      shooterState.enemies.forEach((enemy) => {
+        if (!enemy.alive) return;
+        shooterContext.fillStyle = "#fbbf24";
+        shooterContext.beginPath();
+        shooterContext.arc(enemy.x, enemy.y, 10, 0, Math.PI * 2);
+        shooterContext.fill();
+        shooterContext.fillStyle = "#1f2937";
+        shooterContext.fillRect(enemy.x - 6, enemy.y + 8, 12, 4);
+      });
+    }
+
+    function shootPlayerBullet(nowTime) {
+      if (nowTime - shooterState.lastBulletAt < 190) return;
+      shooterState.bullets.push({ x: shooterState.playerX, y: shooterCanvas.height - 36 });
+      shooterState.lastBulletAt = nowTime;
+    }
+
+    function updateShooter(nowTime) {
+      if (!shooterState.running) return;
+
+      if (shooterState.leftPressed) shooterState.playerX -= 4.2;
+      if (shooterState.rightPressed) shooterState.playerX += 4.2;
+      shooterState.playerX = Math.max(20, Math.min(shooterCanvas.width - 20, shooterState.playerX));
+
+      shooterState.bullets.forEach((bullet) => {
+        bullet.y -= 5.8;
+      });
+      shooterState.bullets = shooterState.bullets.filter((bullet) => bullet.y > -20);
+
+      if (!shooterState.lastEnemyStepAt || nowTime - shooterState.lastEnemyStepAt > 380) {
+        shooterState.lastEnemyStepAt = nowTime;
+        let hitEdge = false;
+        shooterState.enemies.forEach((enemy) => {
+          if (!enemy.alive) return;
+          enemy.x += shooterState.enemyDirection * 13;
+          if (enemy.x > shooterCanvas.width - 20 || enemy.x < 20) hitEdge = true;
+        });
+        if (hitEdge) {
+          shooterState.enemyDirection *= -1;
+          shooterState.enemies.forEach((enemy) => {
+            if (!enemy.alive) return;
+            enemy.y += 15;
+          });
+        }
+      }
+
+      shooterState.bullets.forEach((bullet) => {
+        shooterState.enemies.forEach((enemy) => {
+          if (!enemy.alive) return;
+          const hit = Math.abs(bullet.x - enemy.x) < 12 && Math.abs(bullet.y - enemy.y) < 12;
+          if (hit) {
+            enemy.alive = false;
+            bullet.y = -100;
+            shooterState.score += 10;
+          }
+        });
+      });
+
+      const reachedBottom = shooterState.enemies.some((enemy) => enemy.alive && enemy.y > shooterCanvas.height - 45);
+      if (reachedBottom) {
+        shooterState.lives -= 1;
+        if (shooterState.lives <= 0) {
+          shooterState.running = false;
+          shooterMessage.textContent = "Score: " + shooterState.score + " | Lives: 0 | Game Over";
+        } else {
+          resetShooterEnemies();
+          shooterState.enemyDirection = 1;
+        }
+      }
+
+      const aliveEnemies = shooterState.enemies.filter((enemy) => enemy.alive).length;
+      if (!aliveEnemies) {
+        resetShooterEnemies();
+        shooterState.enemyDirection = 1;
+      }
+
+      shooterMessage.textContent = "Score: " + shooterState.score + " | Lives: " + shooterState.lives;
+      drawShooterFrame();
+      requestAnimationFrame(updateShooter);
+    }
+
+    document.getElementById("shooterStart").addEventListener("click", () => {
+      if (shooterState.running) return;
+      shooterState.running = true;
+      requestAnimationFrame(updateShooter);
+    });
+    document.getElementById("shooterReset").addEventListener("click", () => {
+      shooterState.running = false;
+      resetShooterGame();
+    });
+
+    resetSnakeGame();
+    reset2048();
+    resetTicGame();
+    buildWhackGrid();
+    resetConnect4Game();
+    resetPongGame();
+    resetMemoryMatch();
+    resetShooterGame();
+
+    const flappyCanvas = document.getElementById("flappyCanvas");
+    const flappyContext = flappyCanvas.getContext("2d");
+    const flappyScoreElement = document.getElementById("flappyScore");
+    const flappyBestElement = document.getElementById("flappyBest");
+    const flappyLevelElement = document.getElementById("flappyLevel");
+    const flappyStateElement = document.getElementById("flappyState");
+    const flappyStartButton = document.getElementById("flappyStartBtn");
+    const flappyPauseButton = document.getElementById("flappyPauseBtn");
+    const flappyRestartButton = document.getElementById("flappyRestartBtn");
+
+    const flappyGame = {
+      birdX: 120,
+      birdY: 150,
+      birdVelocityY: 0,
+      birdRadius: 14,
+      gravityPerFrame: 0.36,
+      jumpVelocity: -5.9,
+      maxFallVelocityPerFrame: 7.2,
+      minRiseVelocityPerFrame: -7.0,
+      flapCooldownMs: 86,
+      flapCooldownRemainingMs: 0,
+      jumpBufferMs: 115,
+      jumpBufferRemainingMs: 0,
+      boundaryCoyoteMs: 90,
+      boundaryCoyoteRemainingMs: 0,
+      wasTouchingBoundary: false,
+      collisionPadding: 2,
+      pipeWidth: 64,
+      basePipeGap: 122,
+      pipeSpeed: 2.25,
+      score: 0,
+      level: 1,
+      isRunning: false,
+      isPaused: false,
+      isGameOver: false,
+      animationFrameId: null,
+      lastRenderTime: 0,
+      targetFrameMs: 16.6667,
+      maxDeltaMs: 40,
+      backgroundOffset: 0,
+      pipes: []
+    };
+
+    let flappyBestScore = Number(localStorage.getItem("flappy_best") || 0);
+    flappyBestElement.textContent = String(flappyBestScore);
+
+    function updateFlappyHud() {
+      flappyScoreElement.textContent = String(flappyGame.score);
+      flappyLevelElement.textContent = String(flappyGame.level);
+      if (flappyGame.isGameOver) {
+        flappyStateElement.textContent = "Game Over";
+      } else if (flappyGame.isPaused) {
+        flappyStateElement.textContent = "Paused";
+      } else if (flappyGame.isRunning) {
+        flappyStateElement.textContent = "Running";
+      } else {
+        flappyStateElement.textContent = "Ready";
+      }
+    }
+
+    function createFlappyPipe(spawnX) {
+      const minTopHeight = 34;
+      const maxTopHeight = flappyCanvas.height - flappyGame.basePipeGap - 34;
+      const topHeight = minTopHeight + Math.random() * (maxTopHeight - minTopHeight);
+      return {
+        x: spawnX,
+        topHeight: topHeight,
+        hasBeenScored: false
+      };
+    }
+
+    function resetFlappyGameState() {
+      flappyGame.birdY = 150;
+      flappyGame.birdVelocityY = 0;
+      flappyGame.pipeSpeed = 2.25;
+      flappyGame.basePipeGap = 122;
+      flappyGame.score = 0;
+      flappyGame.level = 1;
+      flappyGame.isGameOver = false;
+      flappyGame.isPaused = false;
+      flappyGame.pipes = [
+        createFlappyPipe(flappyCanvas.width + 60),
+        createFlappyPipe(flappyCanvas.width + 320)
+      ];
+      flappyGame.backgroundOffset = 0;
+      flappyGame.lastRenderTime = 0;
+      flappyGame.flapCooldownRemainingMs = 0;
+      flappyGame.jumpBufferRemainingMs = 0;
+      flappyGame.boundaryCoyoteRemainingMs = 0;
+      flappyGame.wasTouchingBoundary = false;
+      updateFlappyHud();
+    }
+
+    function drawFlappyBackground() {
+      const canvasWidth = flappyCanvas.width;
+      const canvasHeight = flappyCanvas.height;
+
+      const skyGradient = flappyContext.createLinearGradient(0, 0, 0, canvasHeight);
+      skyGradient.addColorStop(0, "#56adff");
+      skyGradient.addColorStop(1, "#b8ecff");
+      flappyContext.fillStyle = skyGradient;
+      flappyContext.fillRect(0, 0, canvasWidth, canvasHeight);
+
+      const cloudShift = flappyGame.backgroundOffset % (canvasWidth + 240);
+      flappyContext.fillStyle = "rgba(255, 255, 255, 0.55)";
+      for (let cloudIndex = 0; cloudIndex < 4; cloudIndex += 1) {
+        const cloudX = canvasWidth - cloudShift + cloudIndex * 170 - 100;
+        const cloudY = 38 + cloudIndex * 28;
+        flappyContext.beginPath();
+        flappyContext.arc(cloudX, cloudY, 20, 0, Math.PI * 2);
+        flappyContext.arc(cloudX + 26, cloudY - 6, 16, 0, Math.PI * 2);
+        flappyContext.arc(cloudX + 48, cloudY + 2, 18, 0, Math.PI * 2);
+        flappyContext.fill();
+      }
+
+      flappyContext.fillStyle = "#7ad66f";
+      flappyContext.fillRect(0, canvasHeight - 24, canvasWidth, 24);
+      flappyContext.fillStyle = "#53b84a";
+      flappyContext.fillRect(0, canvasHeight - 18, canvasWidth, 18);
+    }
+
+    function drawFlappyBird() {
+      const tiltAngle = Math.max(-0.5, Math.min(0.55, flappyGame.birdVelocityY / 9));
+
+      flappyContext.save();
+      flappyContext.translate(flappyGame.birdX, flappyGame.birdY);
+      flappyContext.rotate(tiltAngle);
+
+      flappyContext.beginPath();
+      flappyContext.fillStyle = "#ffe08a";
+      flappyContext.arc(0, 0, flappyGame.birdRadius, 0, Math.PI * 2);
+      flappyContext.fill();
+
+      flappyContext.beginPath();
+      flappyContext.fillStyle = "#ffd166";
+      flappyContext.arc(-3, 1, flappyGame.birdRadius - 5, 0, Math.PI * 2);
+      flappyContext.fill();
+
+      flappyContext.beginPath();
+      flappyContext.fillStyle = "#ff7b54";
+      flappyContext.moveTo(10, -2);
+      flappyContext.lineTo(22, 2);
+      flappyContext.lineTo(10, 7);
+      flappyContext.closePath();
+      flappyContext.fill();
+
+      flappyContext.beginPath();
+      flappyContext.fillStyle = "#111827";
+      flappyContext.arc(3, -4, 2.4, 0, Math.PI * 2);
+      flappyContext.fill();
+
+      flappyContext.restore();
+    }
+
+    function drawFlappyPipe(pipe) {
+      const gap = flappyGame.basePipeGap;
+      const bottomPipeY = pipe.topHeight + gap;
+      const roundedRadius = 8;
+
+      const pipeGradient = flappyContext.createLinearGradient(pipe.x, 0, pipe.x + flappyGame.pipeWidth, 0);
+      pipeGradient.addColorStop(0, "#2f8f46");
+      pipeGradient.addColorStop(1, "#14532d");
+      flappyContext.fillStyle = pipeGradient;
+
+      flappyContext.fillRect(pipe.x, 0, flappyGame.pipeWidth, pipe.topHeight);
+      flappyContext.fillRect(pipe.x, bottomPipeY, flappyGame.pipeWidth, flappyCanvas.height - bottomPipeY);
+
+      flappyContext.fillStyle = "#34a853";
+      flappyContext.fillRect(pipe.x - roundedRadius, pipe.topHeight - 14, flappyGame.pipeWidth + roundedRadius * 2, 14);
+      flappyContext.fillRect(pipe.x - roundedRadius, bottomPipeY, flappyGame.pipeWidth + roundedRadius * 2, 14);
+    }
+
+    function getFlappyCurrentLevel() {
+      return Math.floor(flappyGame.score / 5) + 1;
+    }
+
+    function applyFlappyJump() {
+      const boostedJumpVelocity = flappyGame.jumpVelocity + Math.min(0, flappyGame.birdVelocityY * 0.08);
+      flappyGame.birdVelocityY = Math.max(flappyGame.minRiseVelocityPerFrame, boostedJumpVelocity);
+      flappyGame.flapCooldownRemainingMs = flappyGame.flapCooldownMs;
+      flappyGame.jumpBufferRemainingMs = 0;
+      flappyGame.boundaryCoyoteRemainingMs = 0;
+      flappyGame.wasTouchingBoundary = false;
+    }
+
+    function triggerFlappyJump() {
+      if (!flappyGame.isRunning && !flappyGame.isGameOver) {
+        flappyGame.isRunning = true;
+      }
+
+      if (flappyGame.isGameOver) {
+        resetFlappyGameState();
+        flappyGame.isRunning = true;
+      }
+
+      if (flappyGame.isPaused) return;
+      flappyGame.jumpBufferRemainingMs = flappyGame.jumpBufferMs;
+      updateFlappyHud();
+    }
+
+    function endFlappyGame() {
+      flappyGame.isGameOver = true;
+      flappyGame.isRunning = false;
+      if (flappyGame.score > flappyBestScore) {
+        flappyBestScore = flappyGame.score;
+        localStorage.setItem("flappy_best", String(flappyBestScore));
+        flappyBestElement.textContent = String(flappyBestScore);
+      }
+      updateFlappyHud();
+    }
+
+    function renderFlappyOverlay(textLineOne, textLineTwo) {
+      flappyContext.fillStyle = "rgba(2, 6, 23, 0.45)";
+      flappyContext.fillRect(0, 0, flappyCanvas.width, flappyCanvas.height);
+      flappyContext.fillStyle = "#ffffff";
+      flappyContext.font = "bold 24px Inter, sans-serif";
+      flappyContext.textAlign = "center";
+      flappyContext.fillText(textLineOne, flappyCanvas.width / 2, flappyCanvas.height / 2 - 10);
+      flappyContext.font = "15px Inter, sans-serif";
+      flappyContext.fillText(textLineTwo, flappyCanvas.width / 2, flappyCanvas.height / 2 + 18);
+      flappyContext.textAlign = "start";
+    }
+
+    function updateFlappyWorld(deltaScale) {
+      if (!flappyGame.isRunning || flappyGame.isPaused || flappyGame.isGameOver) return;
+
+      const deltaMs = deltaScale * flappyGame.targetFrameMs;
+      flappyGame.flapCooldownRemainingMs = Math.max(0, flappyGame.flapCooldownRemainingMs - deltaMs);
+      flappyGame.jumpBufferRemainingMs = Math.max(0, flappyGame.jumpBufferRemainingMs - deltaMs);
+      flappyGame.boundaryCoyoteRemainingMs = Math.max(0, flappyGame.boundaryCoyoteRemainingMs - deltaMs);
+
+      if (flappyGame.jumpBufferRemainingMs > 0 && flappyGame.flapCooldownRemainingMs <= 0) {
+        applyFlappyJump();
+      }
+
+      flappyGame.birdVelocityY += flappyGame.gravityPerFrame * deltaScale;
+      flappyGame.birdVelocityY = Math.min(flappyGame.maxFallVelocityPerFrame, flappyGame.birdVelocityY);
+      flappyGame.birdY += flappyGame.birdVelocityY * deltaScale;
+      flappyGame.backgroundOffset += flappyGame.pipeSpeed * deltaScale;
+
+      const hitCeiling = flappyGame.birdY - flappyGame.birdRadius < 0;
+      const hitGround = flappyGame.birdY + flappyGame.birdRadius > flappyCanvas.height - 24;
+      const isTouchingBoundary = hitCeiling || hitGround;
+
+      if (hitCeiling) {
+        flappyGame.birdY = flappyGame.birdRadius;
+        flappyGame.birdVelocityY = Math.max(0, flappyGame.birdVelocityY);
+      }
+      if (hitGround) {
+        flappyGame.birdY = flappyCanvas.height - 24 - flappyGame.birdRadius;
+      }
+
+      if (isTouchingBoundary && !flappyGame.wasTouchingBoundary) {
+        flappyGame.boundaryCoyoteRemainingMs = flappyGame.boundaryCoyoteMs;
+      }
+
+      if (isTouchingBoundary && flappyGame.boundaryCoyoteRemainingMs <= 0) {
+        endFlappyGame();
+      }
+
+      if (!isTouchingBoundary) {
+        flappyGame.boundaryCoyoteRemainingMs = 0;
+      }
+      flappyGame.wasTouchingBoundary = isTouchingBoundary;
+
+      flappyGame.pipes.forEach((pipe) => {
+        pipe.x -= flappyGame.pipeSpeed * deltaScale;
+
+        const birdLeftEdge = flappyGame.birdX - flappyGame.birdRadius + flappyGame.collisionPadding;
+        const birdRightEdge = flappyGame.birdX + flappyGame.birdRadius - flappyGame.collisionPadding;
+        const isBirdInsidePipeX = birdRightEdge > pipe.x && birdLeftEdge < pipe.x + flappyGame.pipeWidth;
+        const isBirdOutsideGap = flappyGame.birdY - flappyGame.birdRadius + flappyGame.collisionPadding < pipe.topHeight ||
+          flappyGame.birdY + flappyGame.birdRadius - flappyGame.collisionPadding > pipe.topHeight + flappyGame.basePipeGap;
+
+        if (isBirdInsidePipeX && isBirdOutsideGap) {
+          endFlappyGame();
+        }
+
+        if (!pipe.hasBeenScored && pipe.x + flappyGame.pipeWidth < flappyGame.birdX) {
+          pipe.hasBeenScored = true;
+          flappyGame.score += 1;
+          flappyGame.level = getFlappyCurrentLevel();
+          flappyGame.pipeSpeed = 2.25 + (flappyGame.level - 1) * 0.28;
+          flappyGame.basePipeGap = Math.max(96, 122 - (flappyGame.level - 1) * 3);
+          updateFlappyHud();
+        }
+      });
+
+      if (flappyGame.pipes.length && flappyGame.pipes[0].x < -flappyGame.pipeWidth - 20) {
+        flappyGame.pipes.shift();
+      }
+
+      const lastPipe = flappyGame.pipes[flappyGame.pipes.length - 1];
+      if (lastPipe && lastPipe.x < flappyCanvas.width - 230) {
+        flappyGame.pipes.push(createFlappyPipe(flappyCanvas.width + 80));
+      }
+    }
+
+    function renderFlappyFrame(timestamp) {
+      if (!flappyGame.lastRenderTime) {
+        flappyGame.lastRenderTime = timestamp;
+      }
+      const frameDeltaMs = Math.min(flappyGame.maxDeltaMs, timestamp - flappyGame.lastRenderTime);
+      const deltaScale = frameDeltaMs / flappyGame.targetFrameMs;
+      flappyGame.lastRenderTime = timestamp;
+
+      updateFlappyWorld(deltaScale);
+
+      drawFlappyBackground();
+      flappyGame.pipes.forEach(drawFlappyPipe);
+      drawFlappyBird();
+
+      if (!flappyGame.isRunning && !flappyGame.isGameOver) {
+        renderFlappyOverlay("Flappy Bird", "Press Start or Space to begin");
+      } else if (flappyGame.isPaused) {
+        renderFlappyOverlay("Paused", "Press Pause button or P to resume");
+      } else if (flappyGame.isGameOver) {
+        renderFlappyOverlay("Game Over", "Press Restart or Space to play again");
+      }
+
+      flappyGame.animationFrameId = requestAnimationFrame(renderFlappyFrame);
+    }
+
+    flappyStartButton.addEventListener("click", () => {
+      if (flappyGame.isGameOver) resetFlappyGameState();
+      flappyGame.isRunning = true;
+      flappyGame.isPaused = false;
+      updateFlappyHud();
+    });
+
+    flappyPauseButton.addEventListener("click", () => {
+      if (!flappyGame.isRunning || flappyGame.isGameOver) return;
+      flappyGame.isPaused = !flappyGame.isPaused;
+      updateFlappyHud();
+    });
+
+    flappyRestartButton.addEventListener("click", () => {
+      resetFlappyGameState();
+      flappyGame.isRunning = true;
+      updateFlappyHud();
+    });
+
+    function getActiveGamePanelId() {
+      const activePanel = document.querySelector(".game-panel.active");
+      return activePanel ? activePanel.id : "";
+    }
+
+    document.addEventListener("keydown", (event) => {
+      const activeGamePanelId = getActiveGamePanelId();
+      const normalizedKey = event.key.toLowerCase();
+      const isMoveUp = event.code === "ArrowUp" || normalizedKey === "w";
+      const isMoveDown = event.code === "ArrowDown" || normalizedKey === "s";
+      const isMoveLeft = event.code === "ArrowLeft" || normalizedKey === "a";
+      const isMoveRight = event.code === "ArrowRight" || normalizedKey === "d";
+
+      if (activeGamePanelId === "snake") {
+        if (isMoveUp && snakeDirection.y !== 1) snakeNextDirection = { x: 0, y: -1 };
+        if (isMoveDown && snakeDirection.y !== -1) snakeNextDirection = { x: 0, y: 1 };
+        if (isMoveLeft && snakeDirection.x !== 1) snakeNextDirection = { x: -1, y: 0 };
+        if (isMoveRight && snakeDirection.x !== -1) snakeNextDirection = { x: 1, y: 0 };
+      }
+
+      if (activeGamePanelId === "puzzle2048") {
+        if (isMoveUp) move2048("up");
+        if (isMoveDown) move2048("down");
+        if (isMoveLeft) move2048("left");
+        if (isMoveRight) move2048("right");
+      }
+
+      const isPongUp = normalizedKey === "w";
+      const isPongDown = normalizedKey === "s";
+      if (activeGamePanelId === "pong") {
+        if (isPongUp) pongState.moveUp = true;
+        if (isPongDown) pongState.moveDown = true;
+      }
+
+      const isShooterLeft = event.code === "ArrowLeft" || normalizedKey === "a";
+      const isShooterRight = event.code === "ArrowRight" || normalizedKey === "d";
+      if (activeGamePanelId === "shooter") {
+        if (isShooterLeft) shooterState.leftPressed = true;
+        if (isShooterRight) shooterState.rightPressed = true;
+      }
+
+      if (isMoveUp || isMoveDown || isMoveLeft || isMoveRight || isPongUp || isPongDown || isShooterLeft || isShooterRight) {
+        event.preventDefault();
+      }
+
+      if (event.code === "Space") {
+        event.preventDefault();
+        if (activeGamePanelId === "flappy") {
+          triggerFlappyJump();
+        }
+        if (activeGamePanelId === "shooter" && shooterState.running) {
+          shootPlayerBullet(performance.now());
+        }
+      }
+      if (event.key.toLowerCase() === "p" && activeGamePanelId === "flappy" && flappyGame.isRunning && !flappyGame.isGameOver) {
+        flappyGame.isPaused = !flappyGame.isPaused;
+        updateFlappyHud();
+      }
+    });
+
+    document.addEventListener("keyup", (event) => {
+      const normalizedKey = event.key.toLowerCase();
+      if (normalizedKey === "w") pongState.moveUp = false;
+      if (normalizedKey === "s") pongState.moveDown = false;
+      if (normalizedKey === "a" || event.code === "ArrowLeft") shooterState.leftPressed = false;
+      if (normalizedKey === "d" || event.code === "ArrowRight") shooterState.rightPressed = false;
+    });
+
+    flappyCanvas.addEventListener("click", () => {
+      if (getActiveGamePanelId() !== "flappy") return;
+      triggerFlappyJump();
+    });
+
+    resetFlappyGameState();
+    updateFlappyHud();
+    flappyGame.animationFrameId = requestAnimationFrame(renderFlappyFrame);
+
+
+// ==== Password Generator ====
+const pwdLength = document.getElementById('pwdLength');
+const pwdGenerate = document.getElementById('pwdGenerate');
+const pwdCopy = document.getElementById('pwdCopy');
+const pwdResult = document.getElementById('pwdResult');
+
+if (pwdGenerate) {
+  pwdGenerate.addEventListener('click', () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+~|}{[]:;?><,./-=';
+    let password = '';
+    const len = Math.max(8, Math.min(64, pwdLength.value || 16));
+    for (let i = 0; i < len; i++) {
+      password += chars[Math.floor(Math.random() * chars.length)];
+    }
+    pwdResult.textContent = password;
+  });
+
+  pwdCopy.addEventListener('click', async () => {
+    if (pwdResult.textContent === '---') return;
+    try {
+      await navigator.clipboard.writeText(pwdResult.textContent);
+      const orig = pwdCopy.textContent;
+      pwdCopy.textContent = 'Copied!';
+      setTimeout(() => pwdCopy.textContent = orig, 1500);
+    } catch(e) {}
+  });
+}
+
+// ==== Breakout Game ====
+const breakoutCanvas = document.getElementById("breakoutCanvas");
+const breakoutContext = breakoutCanvas?.getContext("2d");
+const breakoutMessage = document.getElementById("breakoutMsg");
+const breakoutState = {
+  running: false, paddleX: 240, paddleWidth: 80, paddleHeight: 10,
+  ballX: 280, ballY: 260, ballDX: 3.5, ballDY: -3.5, ballRadius: 6,
+  rightPressed: false, leftPressed: false,
+  score: 0, lives: 3, bricks: []
+};
+const brickRowCount = 5;
+const brickColumnCount = 7;
+const brickWidth = 65;
+const brickHeight = 20;
+const brickPadding = 10;
+const brickOffsetTop = 30;
+const brickOffsetLeft = 25;
+
+function initBricks() {
+  breakoutState.bricks = [];
+  for(let c=0; c<brickColumnCount; c++) {
+    breakoutState.bricks[c] = [];
+    for(let r=0; r<brickRowCount; r++) {
+      breakoutState.bricks[c][r] = { x: 0, y: 0, status: 1 };
+    }
+  }
+}
+
+function drawBreakout() {
+  if(!breakoutContext) return;
+  breakoutContext.fillStyle = "#050a16";
+  breakoutContext.fillRect(0, 0, breakoutCanvas.width, breakoutCanvas.height);
+  
+  breakoutContext.fillStyle = "#67e8f9";
+  breakoutContext.beginPath();
+  breakoutContext.fillRect(breakoutState.paddleX, breakoutCanvas.height - breakoutState.paddleHeight - 10, breakoutState.paddleWidth, breakoutState.paddleHeight);
+  breakoutContext.closePath();
+
+  breakoutContext.fillStyle = "#f8fafc";
+  breakoutContext.beginPath();
+  breakoutContext.arc(breakoutState.ballX, breakoutState.ballY, breakoutState.ballRadius, 0, Math.PI*2);
+  breakoutContext.fill();
+  breakoutContext.closePath();
+
+  for(let c=0; c<brickColumnCount; c++) {
+    for(let r=0; r<brickRowCount; r++) {
+      if(breakoutState.bricks[c][r].status === 1) {
+        const brickX = (c*(brickWidth+brickPadding))+brickOffsetLeft;
+        const brickY = (r*(brickHeight+brickPadding))+brickOffsetTop;
+        breakoutState.bricks[c][r].x = brickX;
+        breakoutState.bricks[c][r].y = brickY;
+        breakoutContext.fillStyle = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#3b82f6"][r];
+        breakoutContext.fillRect(brickX, brickY, brickWidth, brickHeight);
+      }
+    }
+  }
+}
+
+function collisionDetection() {
+  let allClear = true;
+  for(let c=0; c<brickColumnCount; c++) {
+    for(let r=0; r<brickRowCount; r++) {
+      const b = breakoutState.bricks[c][r];
+      if(b.status === 1) {
+        allClear = false;
+        if(breakoutState.ballX > b.x && breakoutState.ballX < b.x+brickWidth && breakoutState.ballY > b.y && breakoutState.ballY < b.y+brickHeight) {
+          breakoutState.ballDY = -breakoutState.ballDY;
+          b.status = 0;
+          breakoutState.score++;
+        }
+      }
+    }
+  }
+  if (allClear && breakoutState.running) {
+    breakoutState.running = false;
+    breakoutMessage.textContent = "You Win! Score: " + breakoutState.score;
+  }
+}
+
+function updateBreakout() {
+  if(!breakoutState.running) return;
+
+  drawBreakout();
+  collisionDetection();
+
+  if(breakoutState.ballX + breakoutState.ballDX > breakoutCanvas.width - breakoutState.ballRadius || breakoutState.ballX + breakoutState.ballDX < breakoutState.ballRadius) {
+    breakoutState.ballDX = -breakoutState.ballDX;
+  }
+  if(breakoutState.ballY + breakoutState.ballDY < breakoutState.ballRadius) {
+    breakoutState.ballDY = -breakoutState.ballDY;
+  } else if(breakoutState.ballY + breakoutState.ballDY > breakoutCanvas.height - breakoutState.ballRadius - 10) {
+    if(breakoutState.ballX > breakoutState.paddleX - 5 && breakoutState.ballX < breakoutState.paddleX + breakoutState.paddleWidth + 5) {
+      breakoutState.ballDY = -breakoutState.ballDY;
+      breakoutState.ballDY -= 0.10; 
+      breakoutState.ballDX += (breakoutState.ballX - (breakoutState.paddleX + breakoutState.paddleWidth/2)) * 0.05;
+    } else if (breakoutState.ballY + breakoutState.ballDY > breakoutCanvas.height - breakoutState.ballRadius) {
+      breakoutState.lives--;
+      if(!breakoutState.lives) {
+        breakoutState.running = false;
+        breakoutMessage.textContent = "Game Over. Score: " + breakoutState.score;
+        return;
+      } else {
+        breakoutState.ballX = breakoutCanvas.width/2;
+        breakoutState.ballY = breakoutCanvas.height - 30;
+        breakoutState.ballDX = 3.5;
+        breakoutState.ballDY = -3.5;
+        breakoutState.paddleX = (breakoutCanvas.width-breakoutState.paddleWidth)/2;
+      }
+    }
+  }
+
+  if(breakoutState.rightPressed && breakoutState.paddleX < breakoutCanvas.width-breakoutState.paddleWidth) {
+    breakoutState.paddleX += 7;
+  } else if(breakoutState.leftPressed && breakoutState.paddleX > 0) {
+    breakoutState.paddleX -= 7;
+  }
+
+  breakoutState.ballX += breakoutState.ballDX;
+  breakoutState.ballY += breakoutState.ballDY;
+  
+  if (breakoutState.running) {
+     breakoutMessage.textContent = "Score: " + breakoutState.score + " | Lives: " + breakoutState.lives;
+     requestAnimationFrame(updateBreakout);
+  }
+}
+
+document.addEventListener("keydown", (e) => {
+  if(typeof getActiveGamePanelId !== "undefined" && getActiveGamePanelId() === "breakout") {
+    if(e.key === "Right" || e.key === "ArrowRight" || e.key.toLowerCase() === "d") { breakoutState.rightPressed = true; e.preventDefault(); }
+    if(e.key === "Left" || e.key === "ArrowLeft" || e.key.toLowerCase() === "a") { breakoutState.leftPressed = true; e.preventDefault(); }
+  }
+});
+document.addEventListener("keyup", (e) => {
+  if(e.key === "Right" || e.key === "ArrowRight" || e.key.toLowerCase() === "d") breakoutState.rightPressed = false;
+  if(e.key === "Left" || e.key === "ArrowLeft" || e.key.toLowerCase() === "a") breakoutState.leftPressed = false;
+});
+
+const breakoutStartBtn = document.getElementById("breakoutStart");
+const breakoutResetBtn = document.getElementById("breakoutReset");
+
+if(breakoutStartBtn) {
+  breakoutStartBtn.addEventListener("click", () => {
+    if(breakoutState.running) return;
+    if(breakoutState.lives <= 0 || breakoutState.score === (brickRowCount * brickColumnCount)) {
+      breakoutState.score = 0;
+      breakoutState.lives = 3;
+      initBricks();
+      breakoutState.ballX = breakoutCanvas.width/2;
+      breakoutState.ballY = breakoutCanvas.height - 30;
+      breakoutState.ballDX = 3.5;
+      breakoutState.ballDY = -3.5;
+    }
+    breakoutState.running = true;
+    updateBreakout();
+  });
+}
+
+if(breakoutResetBtn) {
+  breakoutResetBtn.addEventListener("click", () => {
+    breakoutState.running = false;
+    breakoutState.score = 0;
+    breakoutState.lives = 3;
+    initBricks();
+    breakoutState.ballX = breakoutCanvas.width/2;
+    breakoutState.ballY = breakoutCanvas.height - 30;
+    breakoutState.ballDX = 3.5;
+    breakoutState.ballDY = -3.5;
+    drawBreakout();
+    if(breakoutMessage) breakoutMessage.textContent = "Score: 0 | Lives: 3";
+  });
+}
+
+if(breakoutCanvas) {
+  initBricks();
+  drawBreakout();
+}
+
+// Re-bind tabs wrapper to ensure new tabs work
+const existingTabs = document.querySelectorAll(".tab");
+const newPanels = document.querySelectorAll(".game-panel");
+existingTabs.forEach(tab => {
+  tab.addEventListener("click", () => {
+    existingTabs.forEach((t) => t.classList.remove("active"));
+    newPanels.forEach((p) => p.classList.remove("active"));
+    tab.classList.add("active");
+    const id = tab.dataset.game;
+    const targetPanel = document.getElementById(id);
+    if(targetPanel) targetPanel.classList.add("active");
+  });
+});
